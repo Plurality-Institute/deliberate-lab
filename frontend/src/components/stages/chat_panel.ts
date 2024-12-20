@@ -87,6 +87,7 @@ export class ChatPanel extends MobxLitElement {
     return html`
       <stage-description .stage=${this.stage}></stage-description>
       ${this.renderTimeRemaining()} ${this.renderParticipantList()}
+      ${this.renderEndConversationButton()}
     `;
   }
 
@@ -133,6 +134,36 @@ export class ChatPanel extends MobxLitElement {
     `;
   }
 
+  private renderEndConversationButton() {
+    const endChat = () => {
+
+    await app
+      .firestore()
+      .doc(
+        `experiments/${event.params.experimentId}/cohorts/${event.params.cohortId}/publicStageData/${event.params.stageId}`,
+      )
+      .update({ discussionEndTimestamp: Timestamp.now() });
+  }
+    };
+    return html`
+      <pr-button
+        color="error"
+        class="end-button"
+        variant="tonal"
+        ?disabled=${!this.authService.isExperimenter}
+        @click=${() => {
+          const isConfirmed = window.confirm(
+            `Are you sure you want to end this conversation? Participants will no longer be able to respond.`
+          );
+          if (!isConfirmed) return;
+
+          this.experimentManager.deleteExperiment();
+        }}
+      >
+        End conversation
+      </pr-button>
+    `;
+  }
   private formatTime(seconds: number): string {
     const hours = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);

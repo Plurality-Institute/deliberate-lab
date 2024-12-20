@@ -103,3 +103,7 @@ $bubble-radius-small: common.$spacing-small;
   @include typescale.label-small;
   color: var(--md-sys-color-tertiary);
 }
+
+.end-button {
+  float: bottom;
+}
