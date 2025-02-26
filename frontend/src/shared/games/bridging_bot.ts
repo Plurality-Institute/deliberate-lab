@@ -6,6 +6,7 @@ import {
   createAgentResponseConfig,
   createChatStage,
   createCheckSurveyQuestion,
+  createInfoStage,
   createMetadataConfig,
   createMultipleChoiceItem,
   createMultipleChoiceSurveyQuestion,
@@ -52,6 +53,8 @@ export function getBbotStageConfigs(): StageConfig[] {
   // Make sure users go into Lobby cohort
   // Transfer
   stages.push(BBOT_TRANSFER_STAGE);
+
+  stages.push(BBOT_CHAT_INTRO_STAGE);
 
   // Chat
   stages.push(BBOT_CHAT_STAGE);
@@ -121,7 +124,10 @@ Participation is voluntary. Refusal to participate or withdrawing from the resea
 
 If you have any questions, doubts, or would like us to remove your data from our database, please contact Jeffrey Fossett at jeff@plurality.institute.
 
-By selecting “I accept the terms of service” below, you certify that you are at least 18 years old and a resident of the United States, and that you agree to participate in this research study.`
+By selecting “I accept the terms of service” below, you certify that you are at least 18 years old and a resident of the United States, and that you agree to participate in this research study.`;
+
+const BBOT_CHAT_INTRO_TEXT =
+  'On the next screen, you will have a conversation with another participant. To get the conversation started, please explain a bit more about your position and beliefs on abortion.';
 
 const BBOT_TOS_STAGE = createTOSStage({
   id: 'tos',
@@ -470,17 +476,16 @@ const BBOT_FEEDBACK_SURVEY_STAGE = createSurveyStage({
     }),
     createTextSurveyQuestion({
       questionTitle:
-        'Do you have feedback for the research team on the task or surveys you just completed? Is there anything that was unclear or that didn\'t work as expected?',
+        "Do you have feedback for the research team on the task or surveys you just completed? Is there anything that was unclear or that didn't work as expected?",
     }),
     createTextSurveyQuestion({
-      questionTitle:
-        'Anything else we should know?',
+      questionTitle: 'Anything else we should know?',
     }),
     createCheckSurveyQuestion({
       questionTitle:
         'We would like permission to contact you in the future for a more in-depth paid interview about this study? Check here if you consent to be contacted.',
     }),
-  ]
+  ],
 });
 
 const BBOT_TRANSFER_STAGE = createTransferStage({
@@ -488,6 +493,10 @@ const BBOT_TRANSFER_STAGE = createTransferStage({
   name: 'Wait for other participants',
   game: StageGame.BBOT,
   enableTimeout: false,
+});
+
+const BBOT_CHAT_INTRO_STAGE = createInfoStage({
+  infoLines: BBOT_CHAT_INTRO_TEXT.split('\n'),
 });
 
 const BBOT_CHAT_STAGE = createChatStage({
