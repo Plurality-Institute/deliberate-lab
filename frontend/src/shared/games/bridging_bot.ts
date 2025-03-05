@@ -474,6 +474,15 @@ const BBOT_CONVERSATION_QUALITY_SURVEY_STAGE = createSurveyStage({
         'I was able to communicate my values and beliefs to my partner.',
       ...AGREE_LIKERT_SCALE,
     }),
+
+    createCheckSurveyQuestion({
+      questionTitle: 'I would talk to this person again.',
+    }),
+
+    createCheckSurveyQuestion({
+      questionTitle:
+        'I would like receive further information about opposing viewpoints.',
+    }),
   ],
 });
 
