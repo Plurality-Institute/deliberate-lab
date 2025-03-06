@@ -288,6 +288,15 @@ const pastActionQuestions: SurveyQuestion[] = [
 
 const beliefQuestions: SurveyQuestion[] = [
   createMultipleChoiceSurveyQuestion({
+    questionTitle: 'Do you consider yourself to be...',
+    options: createMultipleChoiceItems([
+      'Pro-life',
+      'Pro-choice',
+      'Neither or unsure',
+    ]),
+  }),
+
+  createMultipleChoiceSurveyQuestion({
     questionTitle: 'Do you think that abortion should be...',
     options: createMultipleChoiceItems([
       'Legal in all cases',
