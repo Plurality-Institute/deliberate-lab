@@ -521,6 +521,8 @@ const BBOT_TRANSFER_STAGE = createTransferStage({
 });
 
 const BBOT_CHAT_INTRO_STAGE = createInfoStage({
+  id: 'chat_intro',
+  name: 'Discussion introduction',
   infoLines: BBOT_CHAT_INTRO_TEXT.split('\n'),
 });
 
