@@ -522,11 +522,15 @@ const BBOT_FEEDBACK_SURVEY_STAGE = createSurveyStage({
   ],
 });
 
+const BBOT_TRANSFER_TEXT =
+  'Please wait while we match you with another conversation participant, and transfer you to the next phase of the experiment. This usually happens within 5 minutes. The delay has been accounted for in the total study time, so you will be paid for the time you spend waiting.';
+
 const BBOT_TRANSFER_STAGE = createTransferStage({
   id: 'participant_matching_transfer',
   name: 'Wait for other participants',
   game: StageGame.BBOT,
   enableTimeout: false,
+  descriptions: createStageTextConfig({primaryText: BBOT_TRANSFER_TEXT}),
 });
 
 const BBOT_CHAT_INTRO_STAGE = createInfoStage({
