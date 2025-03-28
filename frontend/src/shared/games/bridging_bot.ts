@@ -144,7 +144,7 @@ If you have any questions, doubts, or would like us to remove your data from our
 By selecting “I accept the terms of service” below, you certify that you are at least 18 years old and a resident of the United States, and that you agree to participate in this research study.`;
 
 const BBOT_CHAT_INTRO_TEXT =
-  'On the next screen, you will have a conversation with another participant. To get the conversation started, please explain a bit more about your position and beliefs on abortion.';
+  'On the next screen, you will have a conversation with another participant. To get started, explain your position on abortion policy. What should the law be, and why?';
 
 const BBOT_TOS_STAGE = createTOSStage({
   id: 'tos',
@@ -547,7 +547,7 @@ const BBOT_CHAT_STAGE = createChatStage({
   timeLimitInMinutes: 10,
   descriptions: {
     primaryText:
-      'In this discussion, you will have a conversation with one other participant about reproductive rights. A facilitator bot may sometimes chime in as well.',
+      'In this discussion, you will have a conversation with one other participant. To get started, explain your position on abortion policy. What should the law be, and why? A facilitator bot may sometimes chime in as well.',
     infoText: '',
     helpText: '',
   },
