@@ -99,8 +99,9 @@ The response must also:
 - Address the users involved in the conversation
 - Include an identification of yourself as “bridging bot”
 - Have a friendly non-technical tone but still be clear and take from the style of messages themselves (we want to fit into the tone of the chat while still being clear and positive)
-- Be less than 75 words total
+- Be less than 100 words total
 - Be declarative and not ask questions of the users
+- Do not use bulleted lists or other markdown formatting. Just write the response as a single paragraph.
 
 Reference specific pieces of the conversation in your summary rather than generalities. You will only be able to respond once, so make it count!
 `;
