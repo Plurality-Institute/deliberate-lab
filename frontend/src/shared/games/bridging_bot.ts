@@ -99,8 +99,9 @@ The response must also:
 - Address the users involved in the conversation
 - Include an identification of yourself as “bridging bot”
 - Have a friendly non-technical tone but still be clear and take from the style of messages themselves (we want to fit into the tone of the chat while still being clear and positive)
-- Be less than 75 words total
+- Be less than 100 words total
 - Be declarative and not ask questions of the users
+- Do not use bulleted lists or other markdown formatting. Just write the response as a single paragraph.
 
 Reference specific pieces of the conversation in your summary rather than generalities. You will only be able to respond once, so make it count!
 `;
@@ -143,7 +144,7 @@ If you have any questions, doubts, or would like us to remove your data from our
 By selecting “I accept the terms of service” below, you certify that you are at least 18 years old and a resident of the United States, and that you agree to participate in this research study.`;
 
 const BBOT_CHAT_INTRO_TEXT =
-  'On the next screen, you will have a conversation with another participant. To get the conversation started, please explain a bit more about your position and beliefs on abortion.';
+  'On the next screen, you will have a conversation with another participant. To get started, explain your position on abortion policy. What should the law be, and why?';
 
 const BBOT_TOS_STAGE = createTOSStage({
   id: 'tos',
@@ -522,11 +523,15 @@ const BBOT_FEEDBACK_SURVEY_STAGE = createSurveyStage({
   ],
 });
 
+const BBOT_TRANSFER_TEXT =
+  'Please wait while we match you with another conversation participant, and transfer you to the next phase of the experiment. This usually happens within 5 minutes. The delay has been accounted for in the total study time, so you will be paid for the time you spend waiting.';
+
 const BBOT_TRANSFER_STAGE = createTransferStage({
   id: 'participant_matching_transfer',
   name: 'Wait for other participants',
   game: StageGame.BBOT,
   enableTimeout: false,
+  descriptions: createStageTextConfig({primaryText: BBOT_TRANSFER_TEXT}),
 });
 
 const BBOT_CHAT_INTRO_STAGE = createInfoStage({
@@ -542,7 +547,7 @@ const BBOT_CHAT_STAGE = createChatStage({
   timeLimitInMinutes: 10,
   descriptions: {
     primaryText:
-      'In this discussion, you will have a conversation with one other participant about reproductive rights. A facilitator bot may sometimes chime in as well.',
+      'In this discussion, you will have a conversation with one other participant. To get started, explain your position on abortion policy. What should the law be, and why? A facilitator bot may sometimes chime in as well.',
     infoText: '',
     helpText: '',
   },
