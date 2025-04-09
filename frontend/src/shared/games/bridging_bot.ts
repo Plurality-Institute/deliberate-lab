@@ -102,6 +102,7 @@ The response must also:
 - Be less than 100 words total
 - Be declarative and not ask questions of the users
 - Do not use bulleted lists or other markdown formatting. Just write the response as a single paragraph.
+- Do not use the collective "we" in your response.
 
 Reference specific pieces of the conversation in your summary rather than generalities. You will only be able to respond once, so make it count!
 `;
