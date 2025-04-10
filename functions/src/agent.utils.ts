@@ -7,6 +7,7 @@ import {
   StructuredOutputConfig,
   makeStructuredOutputPrompt,
 } from '@deliberation-lab/utils';
+import {ModelResponse} from './api/model.response';
 
 import {getGeminiAPIResponse} from './api/gemini.api';
 import {getOpenAIAPITextCompletionResponse} from './api/openai.api';
@@ -33,7 +34,7 @@ export async function getAgentResponse(
   if (modelSettings.apiType === ApiKeyType.GEMINI_API_KEY) {
     response = getGeminiResponse(
       data,
-      modelSettings.model,
+      modelSettings.modelName,
       prompt,
       generationConfig,
       structuredOutputConfig,
@@ -41,17 +42,19 @@ export async function getAgentResponse(
   } else if (modelSettings.apiType === ApiKeyType.OPENAI_API_KEY) {
     response = getOpenAIAPIResponse(
       data,
-      modelSettings.model,
+      modelSettings.modelName,
       prompt,
       generationConfig,
     );
-  } else if (modelSettings.model === ApiKeyType.OLLAMA_CUSTOM_URL) {
-    response = await getOllamaResponse(data, modelSettings.model, prompt);
-  } else {
-    console.error(
-      'Error: invalid apiKey type: ',
-      data.apiKeys.ollamaApiKey.apiKey,
+  } else if (modelSettings.apiType === ApiKeyType.OLLAMA_CUSTOM_URL) {
+    response = await getOllamaResponse(
+      data,
+      modelSettings.modelName,
+      prompt,
+      generationConfig,
     );
+  } else {
+    console.error('Error: invalid apiKey type: ', data.apiKeys);
     response = {text: ''};
   }
 

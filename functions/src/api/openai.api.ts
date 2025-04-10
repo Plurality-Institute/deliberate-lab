@@ -16,12 +16,13 @@ export async function callOpenAITextCompletion(
     baseURL: baseUrl,
   });
 
-  const customFields = Object.fromEntries(
-    generationConfig.customRequestBodyFields.map((field) => [
-      field.name,
-      field.value,
-    ]),
-  );
+  const customFields = generationConfig.customRequestBodyFields
+    ? Object.fromEntries(
+        generationConfig.customRequestBodyFields.map(
+          (field: {name: string; value: string}) => [field.name, field.value],
+        ),
+      )
+    : {};
   const response = await client.completions.create({
     model: modelName,
     prompt: prompt,
@@ -44,6 +45,55 @@ export async function callOpenAITextCompletion(
   }
 
   return {text: response.choices[0].text};
+}
+
+// The more recent OpenAI responses endpoint, which supports newer models
+export async function callOpenAITextResponse(
+  apiKey: string,
+  baseUrl: string | null,
+  modelName: string,
+  prompt: string,
+  generationConfig: AgentGenerationConfig,
+) {
+  const client = new OpenAI({
+    apiKey: apiKey,
+    baseURL: baseUrl,
+  });
+
+  const customFields = generationConfig.customRequestBodyFields
+    ? Object.fromEntries(
+        generationConfig.customRequestBodyFields.map(
+          (field: {name: string; value: string}) => [field.name, field.value],
+        ),
+      )
+    : {};
+
+  const response = await client.responses.create({
+    model: modelName,
+    input: prompt,
+    temperature: generationConfig.temperature,
+    top_p: generationConfig.topP,
+    ...customFields,
+  });
+
+  if (!response || !response.output_text) {
+    console.error('Error: No response');
+
+    return {text: ''};
+  }
+
+  if (response.status == 'incomplete' && response.incomplete_details) {
+    console.error(
+      'Error: Incomplete response',
+      response.incomplete_details.reason,
+    );
+  }
+
+  if (response.status == 'failed') {
+    console.error('Error: Failed response', response.error);
+  }
+
+  return {text: response.output_text};
 }
 
 export async function getOpenAIAPITextCompletionResponse(
@@ -71,16 +121,27 @@ export async function getOpenAIAPITextCompletionResponse(
   );
 
   let response = {text: ''};
+  // try {
+  //   response = await callOpenAITextCompletion(
+  //     apiKey,
+  //     baseUrl,
+  //     modelName,
+  //     promptText,
+  //     generationConfig,
+  //   );
   try {
-    response = await callOpenAITextCompletion(
+    response = await callOpenAITextResponse(
       apiKey,
       baseUrl,
       modelName,
       promptText,
       generationConfig,
     );
-  } catch (error: any) {
-    console.error('API error:', error);
+  } catch (error: unknown) {
+    console.error('API error (response api):', {
+      modelName: modelName,
+      error: error,
+    });
   }
 
   // Log the response
