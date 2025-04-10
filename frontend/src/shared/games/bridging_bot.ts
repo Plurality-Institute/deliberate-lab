@@ -1,7 +1,9 @@
 import {
   AgentChatPromptConfig,
+  ApiKeyType,
   createAgentChatPromptConfig,
   createAgentChatSettings,
+  createAgentModelSettings,
   createAgentPersonaConfig,
   createChatStage,
   createCheckSurveyQuestion,
@@ -87,20 +89,24 @@ You are currently being asked to intervene in a chat conversation between two us
 
 The full conversation so far is represented below.
 
-Your task is to identify whether conversation participants are in an unproductive conflict. If so, respond, and if not DO NOT respond. 
+Your task is to identify whether conversation participants are in an unproductive conflict. If so, respond, and if not DO NOT respond.
 
-Conflict is characterized by the presence of perceived disagreement, emotional tension, or opposing perspectives across conversational participants. 
-The conflict also needs to be unproductive. An unproductive conflict is defined as: 
-- It arises from a misunderstanding in the use of terms, concepts, or language by conversational participants. 
+Unproductive conflict is characterized by the presence of perceived disagreement, emotional tension, or opposing perspectives. The conflict is unproductive if:
+
+- It arises from a misunderstanding in the use of terms, concepts, or language by conversational participants.
 - It involves personal attacks, name-calling, or other forms of heightened hostility.
-- It is likely to lead to the reinforcement of divisions and/or a breakdown in relationship between conversational participants 
+- It is likely to lead to the reinforcement of divisions and/or a breakdown in relationship between conversational participants
 
 An unproductive conflict DOES NOT have these features:
+
 - Mutual respect across conversational participants
 - A willingness by conversational participants to listen to, learn from, and acknowledge opposing viewpoints
-- The conversation is likely to lead to increased trust, cooperation and mutual understanding across conversational participants. 
+- The conversation is likely to lead to increased trust, cooperation and mutual understanding across conversational participants.
 
-If you chose to respond, formulate a response that:
+Simply holding opposing views is not enough to warrant a response. People with opposing views can reach a mutually beneficial conversation outcome. A single misstep is also acceptable, as long as it is corrected quickly. Only respond if the conversation shows clear signs of becoming unproductive, across multiple messages.
+
+If you choose to respond, formulate a response that:
+
 - Identifies the source of disagreement
 - Creates a mutually comprehensible summary of the sides of the disagreement including the users on each side
 - Offers a concrete step to find common ground or build mutual understanding
@@ -115,7 +121,7 @@ The response must also:
 - Do not use bulleted lists or other markdown formatting. Just write the response as a single paragraph.
 - Do not use the collective "we" in your response.
 
-Reference specific pieces of the conversation in your summary rather than generalities. You will only be able to respond once, so make it count!
+Reference specific pieces of the conversation in your summary rather than generalities. You will be asked to respond again as the conversation continues, but only one response will be used. So choose carefully about whether this is the right time to respond.
 `;
 
 const BBOT_CONSENT = `**You must read and agree to these terms to participate in the study.**
@@ -577,6 +583,10 @@ const createBbotAgent = () => {
     defaultProfile: createParticipantProfileBase({
       name: 'BridgingBot',
       avatar: '💁',
+    }),
+    defaultModelSettings: createAgentModelSettings({
+      apiType: ApiKeyType.OPENAI_API_KEY,
+      modelName: 'gpt-4o',
     }),
   });
 
