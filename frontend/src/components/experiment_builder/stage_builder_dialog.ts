@@ -45,6 +45,11 @@ import {
   SALESPERSON_GAME_METADATA,
   getSalespersonStageConfigs,
 } from '../../shared/games/salesperson';
+import {
+  BBOT_METADATA,
+  BBOT_AGENTS,
+  getBbotStageConfigs,
+} from '../../shared/games/bridging_bot';
 
 import {styles} from './stage_builder_dialog.scss';
 
@@ -124,7 +129,7 @@ export class StageBuilderDialog extends MobxLitElement {
       <div class="card-gallery-wrapper">
         ${this.renderLASCard()} ${this.renderLASCard(true)}
         ${this.renderRealityTVCard()} ${this.renderChipNegotiationCard()}
-        ${this.renderSalespersonGameCard()}
+        ${this.renderSalespersonGameCard()} ${this.renderBbotCard()}
       </div>
     `;
   }
@@ -224,6 +229,19 @@ export class StageBuilderDialog extends MobxLitElement {
       <div class="card" @click=${addGame}>
         <div class="title">${SALESPERSON_GAME_METADATA.name}</div>
         <div>${SALESPERSON_GAME_METADATA.description}</div>
+      </div>
+    `;
+  }
+
+  private renderBbotCard() {
+    const addGame = () => {
+      this.addGame(BBOT_METADATA, getBbotStageConfigs(), BBOT_AGENTS);
+    };
+
+    return html`
+      <div class="card" @click=${addGame}>
+        <div class="title">🪙 ${BBOT_METADATA.name}</div>
+        <div>${BBOT_METADATA.description}</div>
       </div>
     `;
   }
