@@ -3,7 +3,6 @@ import {
   createAgentChatPromptConfig,
   createAgentChatSettings,
   createAgentPersonaConfig,
-  createAgentResponseConfig,
   createChatStage,
   createCheckSurveyQuestion,
   createInfoStage,
@@ -580,11 +579,6 @@ const createBbotAgent = () => {
         minMessagesBeforeResponding: 5,
         canSelfTriggerCalls: false,
         maxResponses: 1,
-      }),
-      responseConfig: createAgentResponseConfig({
-        isJSON: true,
-        messageField: 'response',
-        explanationField: 'explanation',
       }),
     },
   );
