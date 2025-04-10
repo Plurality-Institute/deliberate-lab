@@ -47,6 +47,14 @@ export interface ModelGenerationConfig {
   customRequestBodyFields: CustomRequestBodyField[];
 }
 
+export interface AgentGenerationConfig {
+  temperature?: number;
+  topP?: number;
+  frequencyPenalty?: number;
+  presencePenalty?: number;
+  customRequestBodyFields?: {name: string; value: string}[];
+}
+
 /** Model settings for a specific agent. */
 export interface AgentModelSettings {
   apiType: ApiKeyType;

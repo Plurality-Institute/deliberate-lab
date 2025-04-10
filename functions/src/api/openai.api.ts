@@ -16,11 +16,13 @@ export async function callOpenAITextCompletion(
     baseURL: baseUrl,
   });
 
-  const customFields = Object.fromEntries(
-    generationConfig.customRequestBodyFields.map(
-      (field: {name: string; value: string}) => [field.name, field.value],
-    ),
-  );
+  const customFields = generationConfig.customRequestBodyFields
+    ? Object.fromEntries(
+        generationConfig.customRequestBodyFields.map(
+          (field: {name: string; value: string}) => [field.name, field.value],
+        ),
+      )
+    : {};
   const response = await client.completions.create({
     model: modelName,
     prompt: prompt,
@@ -58,11 +60,13 @@ export async function callOpenAITextResponse(
     baseURL: baseUrl,
   });
 
-  const customFields = Object.fromEntries(
-    generationConfig.customRequestBodyFields.map(
-      (field: {name: string; value: string}) => [field.name, field.value],
-    ),
-  );
+  const customFields = generationConfig.customRequestBodyFields
+    ? Object.fromEntries(
+        generationConfig.customRequestBodyFields.map(
+          (field: {name: string; value: string}) => [field.name, field.value],
+        ),
+      )
+    : {};
 
   const response = await client.responses.create({
     model: modelName,
