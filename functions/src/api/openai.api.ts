@@ -48,7 +48,7 @@ export async function callOpenAITextCompletion(
 }
 
 // The more recent OpenAI responses endpoint, which supports newer models
-export async function callOpenAITextResponse(
+export async function callOpenAIResponses(
   apiKey: string,
   baseUrl: string | null,
   modelName: string,
@@ -120,23 +120,35 @@ export async function getOpenAIAPITextCompletionResponse(
     generationConfig,
   );
 
+  const LEGACY_MODELS = [
+    'text-davinci-003',
+    'text-davinci-002',
+    'text-curie-001',
+    'text-babbage-001',
+    'text-ada-001',
+    'code-davinci-002',
+    'code-cushman-001',
+  ];
+
   let response = {text: ''};
-  // try {
-  //   response = await callOpenAITextCompletion(
-  //     apiKey,
-  //     baseUrl,
-  //     modelName,
-  //     promptText,
-  //     generationConfig,
-  //   );
   try {
-    response = await callOpenAITextResponse(
-      apiKey,
-      baseUrl,
-      modelName,
-      promptText,
-      generationConfig,
-    );
+    if (LEGACY_MODELS.includes(modelName)) {
+      response = await callOpenAITextCompletion(
+        apiKey,
+        baseUrl,
+        modelName,
+        promptText,
+        generationConfig,
+      );
+    } else {
+      response = await callOpenAIResponses(
+        apiKey,
+        baseUrl,
+        modelName,
+        promptText,
+        generationConfig,
+      );
+    }
   } catch (error: unknown) {
     console.error('API error (response api):', {
       modelName: modelName,
