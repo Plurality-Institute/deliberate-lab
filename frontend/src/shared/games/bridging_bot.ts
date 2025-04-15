@@ -187,10 +187,10 @@ const BBOT_TOS_STAGE = createTOSStage({
 
 const BBOT_PROFILE_STAGE = createProfileStage({
   id: 'profile',
-  name: 'View randomly generated profile',
+  name: 'Your randomly generated identity',
   descriptions: createStageTextConfig({
     primaryText:
-      "This identity is how other participants will see you during today's experiment.",
+      "This is how other participants will see you during today's experiment. Click 'Next stage' below to continue.",
   }),
   game: StageGame.BBOT,
   profileType: ProfileType.ANONYMOUS_ANIMAL,
