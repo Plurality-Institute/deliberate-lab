@@ -67,8 +67,7 @@ export function getBbotStageConfigs(): StageConfig[] {
   stages.push(BBOT_DEMOCRATIC_RECIPROCITY_SURVEY_STAGE_POST);
   stages.push(BBOT_DEMOGRAPHIC_SURVEY_STAGE);
   stages.push(BBOT_FEEDBACK_SURVEY_STAGE);
-
-  // Payout?
+  stages.push(BBOT_DEBRIEF_STAGE);
 
   return stages;
 }
@@ -175,14 +174,21 @@ If you have any questions, doubts, or would like us to remove your data from our
 
 By selecting “I accept the terms of service” below, you certify that you are at least 18 years old and a resident of the United States, and that you agree to participate in this research study.`;
 
-const BBOT_CHAT_INTRO_TEXT =
-  'On the next screen, you will have a conversation with another participant. To get started, explain your position on abortion policy. What should the law be, and why?';
-
 const BBOT_TOS_STAGE = createTOSStage({
   id: 'tos',
   game: StageGame.CHP,
   name: 'Consent',
   tosLines: BBOT_CONSENT.split('\n'),
+});
+
+const BBOT_DEBRIEF_TEXT = `**Debriefing Statement**
+
+Thank you for participating in this study. We want to let you know that some elements of the study involved intentional deception. Specifically, you were told that your chat transcript would be shown to future participants who would evaluate your conversation. In reality, this step will not take place. This was included solely to help create the feeling of a public or evaluative context, which we believe better simulates how people behave in online conversations. The true purpose of the study is to explore how large language models can help mediate disagreements between people. Your participation helps us develop new approaches for fostering more constructive dialogue in online spaces. If you have any concerns, please don't hesitate to contact us. You can message us on Prolific or email Jeffrey Fossett at jeff@plurality.institute.`;
+
+const BBOT_DEBRIEF_STAGE = createInfoStage({
+  id: 'debrief',
+  name: 'Conclusion',
+  infoLines: BBOT_DEBRIEF_TEXT.split('\n'),
 });
 
 const BBOT_PROFILE_STAGE = createProfileStage({
@@ -566,6 +572,11 @@ const BBOT_TRANSFER_STAGE = createTransferStage({
   descriptions: createStageTextConfig({primaryText: BBOT_TRANSFER_TEXT}),
 });
 
+const BBOT_CHAT_INTRO_TEXT = `On the next screen, you will have a conversation with another participant. To get started, explain your position on abortion policy. What should the law be, and why?
+
+Your anonymous chat transcript will be shown to other participants in a later phase of the experiment, where they will be asked to share their opinions about what you have said.
+`;
+
 const BBOT_CHAT_INTRO_STAGE = createInfoStage({
   id: 'chat_intro',
   name: 'Discussion introduction',
@@ -579,7 +590,7 @@ const BBOT_CHAT_STAGE = createChatStage({
   timeLimitInMinutes: 10,
   descriptions: {
     primaryText:
-      'In this discussion, you will have a conversation with one other participant. To get started, explain your position on abortion policy. What should the law be, and why? A facilitator bot may sometimes chime in as well.',
+      'In this discussion, you will have a conversation with one other participant. To get started, explain your position on abortion policy. What should the law be, and why? Your conversation will be shown to other participants in a later phase of the experiment, where they will be asked to share their opinions about what you have said. A facilitator bot may sometimes chime in as well.',
     infoText: '',
     helpText: '',
   },
