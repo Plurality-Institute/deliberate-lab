@@ -72,6 +72,7 @@ export enum StageGame {
   CHP = 'chp', // Chip Negotiation
   CTS = 'cts', // Co-op Traveling Salesperson
   TG = 'TG', // Test Game
+  BBOT = 'BBOT', // Bridging Bot
 }
 
 /**
