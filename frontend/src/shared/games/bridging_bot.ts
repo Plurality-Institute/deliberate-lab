@@ -209,9 +209,11 @@ const BBOT_TOS_STAGE = createTOSStage({
   tosLines: BBOT_CONSENT.split('\n'),
 });
 
-const BBOT_DEBRIEF_TEXT = `**Debriefing Statement**
+const BBOT_DEBRIEF_TEXT = `**The study is now complete. Thank you for participating.**
 
-Thank you for participating in this study. We want to let you know that some elements of the study involved intentional deception. Specifically, you were told that your chat transcript would be shown to future participants who would evaluate your conversation. In reality, this step will not take place. This was included solely to help create the feeling of a public or evaluative context, which we believe better simulates how people behave in online conversations. The true purpose of the study is to explore how large language models can help mediate disagreements between people. Your participation helps us develop new approaches for fostering more constructive dialogue in online spaces. If you have any concerns, please don't hesitate to contact us. You can message us on Prolific or email Jeffrey Fossett at jeff@plurality.institute.`;
+During your chat you were randomly assigned to a condition that involved either (a) no moderator message, (b) a standard pre-written message, or (c) a message written by an AI moderation system we are testing. The system is designed to help support constructive disagreement in online conversations. The goal of our study is to understand whether this form of moderation can improve the quality of text-based online conversations.
+
+We withheld this detail at the start so it would not influence how you spoke with your partner or responded to our surveys; the IRB approved this temporary omission because the study posed no more than minimal risk. If you have concerns, would like your data removed, or want more information, email <jeff@plurality.institute>.`;
 
 const BBOT_DEBRIEF_STAGE = createInfoStage({
   id: 'debrief',
