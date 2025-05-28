@@ -55,6 +55,7 @@ export function getBbotStageConfigs(): StageConfig[] {
 
   if (!SKIP_INITIAL_SURVEY) {
     stages.push(BBOT_DEMOCRATIC_RECIPROCITY_SURVEY_STAGE_PRE);
+    stages.push(BBOT_FEELING_THERMOMETER_SURVEY_STAGE_PRE);
   }
 
   // Make sure users go into Lobby cohort
@@ -70,9 +71,9 @@ export function getBbotStageConfigs(): StageConfig[] {
   stages.push(BBOT_CONVERSATION_QUALITY_SURVEY_STAGE);
   stages.push(BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_POST);
   stages.push(BBOT_DEMOCRATIC_RECIPROCITY_SURVEY_STAGE_POST);
-  // stages.push(BBOT_FEELING_THERMOMETER_SURVEY_STAGE);
+  stages.push(BBOT_FEELING_THERMOMETER_SURVEY_STAGE_POST);
   stages.push(BBOT_DEMOGRAPHIC_SURVEY_STAGE);
-  stages.push(BBOT_FEEDBACK_SURVEY_STAGE);
+  // stages.push(BBOT_FEEDBACK_SURVEY_STAGE);
   stages.push(BBOT_DEBRIEF_STAGE);
 
   return stages;
@@ -464,6 +465,42 @@ const BBOT_DEMOCRATIC_RECIPROCITY_SURVEY_STAGE_POST = createSurveyStage({
   ...DEMOCRATIC_RECIPROCITY_SURVEY_CONFIG,
 });
 
+const FEELING_THERMOMETER_SURVEY_CONFIG: Partial<SurveyStageConfig> = {
+  name: 'Feelings about others',
+  descriptions: createStageTextConfig({
+    primaryText:
+      'Imagine a thermometer that ranges from 0 to 10, where 0 means you feel extremely cold, negative, or hostile, and 10 means you feel extremely warm, positive, or friendly.',
+  }),
+  game: StageGame.BBOT,
+  questions: [
+    createScaleSurveyQuestion({
+      questionTitle:
+        'First, think about people who are have the same/similar beliefs as you when it comes to abortion rights. Using this thermometer, what number best describes your overall feelings toward these individuals?',
+      upperValue: 10,
+      upperText: 'Warm, positive, or friendly',
+      lowerValue: 0,
+      lowerText: 'Cold, negative, or hostile',
+    }),
+    createScaleSurveyQuestion({
+      questionTitle:
+        'Next, think about people who have opposite/different beliefs from you when it comes to abortion rights. Using this thermometer, what number best describes your overall feelings toward these individuals?',
+      upperValue: 10,
+      upperText: 'Warm, positive, or friendly',
+      lowerValue: 0,
+      lowerText: 'Cold, negative, or hostile',
+    }),
+  ],
+};
+
+const BBOT_FEELING_THERMOMETER_SURVEY_STAGE_PRE = createSurveyStage({
+  id: 'feeling_thermometer_survey_pre',
+  ...FEELING_THERMOMETER_SURVEY_CONFIG,
+});
+const BBOT_FEELING_THERMOMETER_SURVEY_STAGE_POST = createSurveyStage({
+  id: 'feeling_thermometer_survey_post',
+  ...FEELING_THERMOMETER_SURVEY_CONFIG,
+});
+
 const BBOT_CONVERSATION_QUALITY_SURVEY_STAGE = createSurveyStage({
   id: 'conversation_quality_survey',
   name: 'Conversation review',
@@ -475,10 +512,10 @@ const BBOT_CONVERSATION_QUALITY_SURVEY_STAGE = createSurveyStage({
   questions: [
     createScaleSurveyQuestion({
       questionTitle:
-        'On a scale from 1-10, please rate the extent to which you and your partner agreed about the issue of abortion rights in the preceding conversation.',
+        'On a scale from 0-10, please rate the extent to which you and your partner agreed about the issue of abortion rights in the preceding conversation.',
       upperValue: 10,
       upperText: 'High ageeement',
-      lowerValue: 1,
+      lowerValue: 0,
       lowerText: 'Low agreement',
     }),
 
@@ -508,8 +545,7 @@ const BBOT_CONVERSATION_QUALITY_SURVEY_STAGE = createSurveyStage({
     }),
 
     createMultipleChoiceSurveyQuestion({
-      questionTitle:
-        'This is an attention check. Please answer “Somewhat unlikely” to this question.',
+      questionTitle: 'Please answer “Somewhat unlikely” to this question.',
       options: createMultipleChoiceItems([
         'Very likely',
         'Somewhat likely',
