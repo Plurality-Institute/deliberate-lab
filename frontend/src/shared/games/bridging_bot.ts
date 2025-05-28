@@ -212,6 +212,11 @@ const BBOT_TOS_STAGE = createTOSStage({
 
 const BBOT_DEBRIEF_TEXT = `**The study is now complete. Thank you for participating.**
 
+Abortion rights is an important policy issue. Here are some links to additional resources if you would like to learn more about different perspectives on this topic:
+
+- Pro-choice perspectives: [Center for Reproductive Rights resources & research](https://reproductiverights.org/get-involved/featured-resources/)
+- Pro-life perspectives: [National Right to Life fact sheet](https://nrlc.org/factsheets/)
+
 During your chat you were randomly assigned to a condition that involved either (a) no moderator message, (b) a standard pre-written message, or (c) a message written by an AI moderation system we are testing. The system is designed to help support constructive disagreement in online conversations. The goal of our study is to understand whether this form of moderation can improve the quality of text-based online conversations.
 
 We withheld this detail at the start so it would not influence how you spoke with your partner or responded to our surveys; the IRB approved this temporary omission because the study posed no more than minimal risk. If you have concerns, would like your data removed, or want more information, email <jeff@plurality.institute>.`;
@@ -238,68 +243,6 @@ const BBOT_DEMOGRAPHIC_SURVEY_STAGE = createSurveyStage({
   name: 'Demographic info',
   game: StageGame.BBOT,
   questions: [
-    createTextSurveyQuestion({
-      questionTitle:
-        'In which US state do you currently reside? (Please enter the two-letter state code, eg. NY or FL)',
-    }),
-
-    createMultipleChoiceSurveyQuestion({
-      questionTitle:
-        'Which of the following best describes your religious preference?',
-      options: createMultipleChoiceItems([
-        'Buddhist',
-        'Christian (Protestant)',
-        'Christian (Catholic)',
-        'Hindu',
-        'Jewish',
-        'Muslim',
-        'Spiritual but not religious',
-        'Atheist or Agnostic',
-        'Another religious or belief system',
-        'Prefer not to answer',
-      ]),
-    }),
-
-    // Questions can't be optional, so we're going to skip the write-in answers for now.
-    // createTextSurveyQuestion({
-    //   questionTitle:
-    //     'If you indicated "Another religious or belief system" above, please specify.',
-    // }),
-
-    createMultipleChoiceSurveyQuestion({
-      questionTitle:
-        'Which of the following best describes your political affiliation?',
-      options: createMultipleChoiceItems([
-        'Democrat',
-        'Republican',
-        'Independent',
-        'Libertarian',
-        'Green Party',
-        'Other',
-        'I do not identify with a political party',
-        'Prefer not to answer',
-      ]),
-    }),
-
-    // createTextSurveyQuestion({
-    //   questionTitle: 'If you indicated "Other" above, please specify.',
-    // }),
-
-    createMultipleChoiceSurveyQuestion({
-      questionTitle:
-        'Which category best describes your total annual household income before taxes?',
-      options: createMultipleChoiceItems([
-        'Less than $25,000',
-        '$25,000 - $49,999',
-        '$50,000 - $74,999',
-        '$75,000 - $99,999',
-        '$100,000 - $149,999',
-        '$150,000 - $199,999',
-        '$200,000 or more',
-        'Prefer not to answer',
-      ]),
-    }),
-
     createMultipleChoiceSurveyQuestion({
       questionTitle: 'What is your age?',
       options: createMultipleChoiceItems([
@@ -316,21 +259,81 @@ const BBOT_DEMOGRAPHIC_SURVEY_STAGE = createSurveyStage({
 
     createMultipleChoiceSurveyQuestion({
       questionTitle:
-        'Which of the following best describes your gender identity?',
+        'Which of the following best describes your current gender identity? (Select one)',
       options: createMultipleChoiceItems([
         'Female',
         'Male',
-        'Non-binary',
-        'Genderqueer/genderfluid',
+        'Non-binary / Third gender',
         'Another gender identity',
         'Prefer not to answer',
       ]),
     }),
 
-    // createTextSurveyQuestion({
-    //   questionTitle:
-    //     'If you indicated "Another gender identity" above, please specify.',
-    // }),
+    createMultipleChoiceSurveyQuestion({
+      questionTitle: 'Are you currently able to become pregnant?',
+      options: createMultipleChoiceItems(['Yes', 'No', 'Prefer not to answer']),
+    }),
+
+    createMultipleChoiceSurveyQuestion({
+      questionTitle:
+        'Which of the following describe your race and/or ethnicity? (Select all that apply)',
+      options: createMultipleChoiceItems([
+        'American Indian or Alaska Native',
+        'Asian',
+        'Black or African American',
+        'Hispanic, Latino, or Spanish origin',
+        'Middle Eastern or North African',
+        'Native Hawaiian or Other Pacific Islander',
+        'White/Caucasian',
+        'Some other race, ethnicity, or origin',
+        'Prefer not to answer',
+      ]),
+    }),
+
+    createMultipleChoiceSurveyQuestion({
+      questionTitle:
+        'What is the highest level of education you have completed?',
+      options: createMultipleChoiceItems([
+        'Less than high school',
+        'High school diploma or GED',
+        'Some college / Associate degree',
+        "Bachelor's degree",
+        'Graduate or professional degree',
+        'Prefer not to answer',
+      ]),
+    }),
+
+    createMultipleChoiceSurveyQuestion({
+      questionTitle:
+        'Which of the following political parties do your views most align with?',
+      options: createMultipleChoiceItems([
+        'Democrat',
+        'Republican',
+        'Independent',
+        'Something else',
+        'Prefer not to answer',
+      ]),
+    }),
+
+    createMultipleChoiceSurveyQuestion({
+      questionTitle: 'What is your present religion, if any?',
+      options: createMultipleChoiceItems([
+        'Christianity (any tradition)',
+        'Judaism',
+        'Islam',
+        'Buddhism',
+        'Hinduism',
+        'Atheist / Agnostic / No religion in particular',
+        'Other religion or spiritual tradition',
+        'Prefer not to answer',
+      ]),
+    }),
+
+    createMultipleChoiceSurveyQuestion({
+      questionTitle:
+        'Would you like to be involved in future studies that involve conversations with people who disagree with you about abortion rights?',
+      options: createMultipleChoiceItems(['Yes', 'No']),
+    }),
   ],
 });
 
