@@ -247,7 +247,7 @@ const BBOT_TOS_STAGE = createTOSStage({
 
 const BBOT_DEBRIEF_TEXT = `**The study is now complete. Thank you for participating.**
 
-Abortion rights is an important policy issue. Here are some links to additional resources if you would like to learn more about different perspectives on this topic:
+Abortion rights is an important policy issue. Here are some links to additional resources if you would like to learn more about different perspectives on this topic (links open in a new browser tab):
 
 - Pro-choice perspectives: [Center for Reproductive Rights resources & research](https://chatstudy.short.gy/center-for-reproductive-rights-research)
 - Pro-life perspectives: [National Right to Life fact sheet](https://chatstudy.short.gy/national-right-to-life)
