@@ -24,8 +24,8 @@
 
 ul,
 ol {
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
+  margin-top: 0;
+  margin-bottom: 0;
   padding-left: 1.5em;
 }
 
@@ -67,4 +67,8 @@ li {
 
 :host h1 {
   margin-top: 0.5em;
+}
+
+:host blockquote {
+  margin: 0 0 0 2em;
 }

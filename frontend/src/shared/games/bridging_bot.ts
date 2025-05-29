@@ -146,22 +146,25 @@ You must do all of the following:
 
 const BBOT_CONSENT = `# Consent to Participate in Research Study
 
-**TITLE:** Large Language Models for Bridging and De-escalation in Online Conversations: DeliberateLab Study
+**TITLE:**
+> Large Language Models for Bridging and De-escalation in Online Conversations: DeliberateLab Study
 
 **PROTOCOL NO.:**
-    NA
-    WCG IRB Protocol # 20251814
+> NA
+> WCG IRB Protocol # 20251814
 
-**SPONSOR:** Plurality Institute
+**SPONSOR:**
+> Plurality Institute
 
 **INVESTIGATOR:**
-    Jeffrey Fossett, BA, AM
-    10 Agassiz Street
-    Apartment 32
-    Cambridge, Massachusetts 02140
-    United States
+> Jeffrey Fossett, BA, AM
+> 10 Agassiz Street
+> Apartment 32
+> Cambridge, Massachusetts 02140
+> United States
 
-**STUDY-RELATED PHONE NUMBER(S):** 518-852-0896 (24 hours)
+**STUDY-RELATED PHONE NUMBER(S):**
+> 518-852-0896 (24 hours)
 
 Your participation in this study is voluntary. You may decide not to participate or you may leave the study at any time. Your decision will not result in any penalty or loss of benefits to which you are otherwise entitled.
 
