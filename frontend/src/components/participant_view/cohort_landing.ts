@@ -56,7 +56,7 @@ export class CohortLanding extends MobxLitElement {
         <div class="action-buttons">
           <pr-button
             ?loading=${this.isLoading}
-            ?disabled=${isLockedCohort()}
+            ?disabled=${isLockedCohort() || this.experimentService.isLoading}
             @click=${this.joinExperiment}
           >
             Join experiment

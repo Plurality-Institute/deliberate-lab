@@ -603,7 +603,7 @@ const BBOT_TRANSFER_STAGE = createTransferStage({
   participantCounts: {illegal: 1, legal: 1},
 });
 
-const BBOT_CHAT_INTRO_TEXT = `On the next screen, you will have a chat conversation about abortion policy with another participant who may see the issue differently.
+const BBOT_CHAT_INTRO_TEXT = `In the next stage, you will have a chat conversation about abortion policy with another participant who may see the issue differently.
 
 The chat is anonymous and will last 10 minutes.
 
@@ -615,14 +615,20 @@ const BBOT_CHAT_INTRO_STAGE = createInfoStage({
   infoLines: BBOT_CHAT_INTRO_TEXT.split('\n'),
 });
 
+const CHAT_DESCRIPTION = `You are now in a chat conversation with another participant.
+
+To start the conversation, please share a brief statement of your view on abortion policy (1-2 sentences). What, if anything, should the law allow or restrict, and why?
+
+After sending your first message, please read your partner's messages and continue the discussion.`;
+
 const BBOT_CHAT_STAGE = createChatStage({
   game: StageGame.BBOT,
   id: BBOT_CHAT_STAGE_ID,
   name: 'Group discussion',
   timeLimitInMinutes: 10,
+  requireFullTime: true,
   descriptions: {
-    primaryText:
-      "You are now in a chat conversation with another participant. To start the conversation, please share a brief statement of your view on abortion policy (1-2 sentences). What, if anything, should the law allow or restrict, and why? After sending your first message, please read your partner's messages and continue the discussion.",
+    primaryText: CHAT_DESCRIPTION,
     infoText: '',
     helpText: '',
   },
