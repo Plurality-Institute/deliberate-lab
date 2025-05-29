@@ -26,6 +26,19 @@ export function convertMarkdownToHTML(
     htmlExtensions: [gfmHtml()],
   });
 
+  // Only run in browser
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    Array.from(div.querySelectorAll('a[href]')).forEach((a) => {
+      const href = a.getAttribute('href');
+      if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener');
+      }
+    });
+    return div.innerHTML;
+  }
   return html;
 }
 
