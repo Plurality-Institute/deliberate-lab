@@ -146,9 +146,31 @@ You must do all of the following:
 
 const BBOT_CONSENT = `# Consent to Participate in Research Study
 
+**TITLE:** Large Language Models for Bridging and De-escalation in Online Conversations: DeliberateLab Study
+
+**PROTOCOL NO.:**
+    NA
+    WCG IRB Protocol # 20251814
+
+**SPONSOR:** Plurality Institute
+
+**INVESTIGATOR:**
+    Jeffrey Fossett, BA, AM
+    10 Agassiz Street
+    Apartment 32
+    Cambridge, Massachusetts 02140
+    United States
+
+**STUDY-RELATED PHONE NUMBER(S):** 518-852-0896 (24 hours)
+
+Your participation in this study is voluntary. You may decide not to participate or you may leave the study at any time. Your decision will not result in any penalty or loss of benefits to which you are otherwise entitled.
+
+If you have questions, concerns, or complaints, or think this research has hurt you, talk to the research team at the phone number(s) listed in this document.
+
 _You must read and agree to these terms to participate in the study._
 
 **Researchers:**
+
 - Jeffrey Fossett: Plurality Institute
 - Ian Baker: UC Berkeley & Plurality Institute
 
@@ -157,49 +179,59 @@ _You must read and agree to these terms to participate in the study._
 # About this Research
 
 We are a team of researchers studying online conversations.
+If you agree to participate in this research study, you will be asked to do the following:
 
-If you agree to participate in this study, you will be asked to do the following:
 - Complete a short survey about your beliefs on reproductive rights.
 - Engage in a 10-minute, text-only chat with another research participant who may disagree with you about this issue.
 - Complete a short follow up survey.
 
 A chat moderator—which could be automated—may post a message during your conversation.
-
 In total, the study will take approximately **22 minutes to complete.**
 
 # Compensation
 
-If you finish both surveys and the chat, you will receive the amount shown in Prolific. If you leave the study early, you will not be compensated.
+If you finish both surveys and the chat, you will receive the amount shown in Prolific ($5.50). If you leave the study early, you will not be compensated.
 
 A single individual may not participate in this study more than once. You will be ineligible for payment if we detect that you attempted to participate a second time.
 
 # Possible Risks and Benefits
 
 Participation in this study involves several possible risks:
+
 - **Loss of confidentiality.** A risk of taking part in this study is the possibility of a loss of confidentiality or privacy. This means having your personal information shared with someone who is not on the study team and was not supposed to see or know about your information. The study team plans to protect your privacy. Their plans for keeping your information private are described in the Confidentiality section below.
 - **Emotional discomfort.** Discussing abortion can be upsetting. You may leave the study at any time by closing your browser window. You can also dial 988 to contact the Suicide & Crisis Lifeline if you feel distressed.
 
-You may or may not receive direct benefit from taking part in this study. A possible benefit of taking part in this study is the opportunity to discuss and learn about new perspectives on an issue that may be important to you.
+You may or may not receive direct benefit from taking part in this study. A possible benefit of taking part in this study is the opportunity to discuss and learn about new perspectives on an issue that may be important to you. Your alternative is to not participate.
 
 # Privacy and Confidentiality
 
-The researchers listed above will be able to see and analyze the content of your messages, as well as your survey responses. This information will never be shared outside of the research team, except in anonymized, aggregate form in academic publications
+The researchers listed above including the sponsor will be able to see and analyze the content of your messages, as well as your survey responses. This information will never be shared outside of the research team, except in anonymized, aggregate form in academic publications. The Institutional Review Board (IRB) that reviewed this research may also have access to the data collected.
 
 Your privacy and confidentiality of your responses are of paramount importance to us. We do not collect information about your identity, and we cannot re-contact you except through the Prolific platform.
 
 # Participant's Rights
-- Participation is voluntary. You are free to withdraw from the study at any time by closing your browser window.
-- You may request that your data be deleted at any time before publication.
-- You will be shown a short debrief after the study explaining the research conditions and purpose of the study.
+
+Participation is voluntary. You are free to withdraw from the study at any time by closing your browser window.
+You may request that your data be deleted at any time before publication.
+You will be shown a short debrief after the study explaining the research conditions and purpose of the study.
 
 # Contact Details
 
+This research is being overseen by WCG IRB. An IRB is a group of people who perform independent review of research studies. You may talk to them at 855-818-2289 or <clientcare@wcgclinical.com> if:
+
+- You have questions, concerns, or complaints that are not being answered by the research team.
+- You are not getting answers from the research team.
+- You cannot reach the research team.
+- You want to talk to someone else about the research.
+- You have questions about your rights as a research subject.
+
 If you have any questions or concerns, or would like us to remove your data from our database, please contact Jeffrey Fossett at <jeff@plurality.institute>.
 
-**Please protect your privacy.** If you agree to participate, please do not share anything that could identify you personally (e.g., real name, email, phone number, social media handle) in the chat or surveys.
+Please protect your privacy. If you agree to participate, please do not share anything that could identify you personally (e.g., real name, email, phone number, social‑media handle) in the chat or surveys.
 
-By selecting “I accept the Terms of Service” below, you certify that:
-- You are at least 18 years old and a resident of the United States.
+By selecting “I agree to participate” below, you certify that:
+
+- You are at least 18 years old and a resident of the United States
 - You have read and understood the information above.
 - You voluntarily agree to take part in this research study.`;
 
