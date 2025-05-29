@@ -244,50 +244,8 @@ const BBOT_DEMOGRAPHIC_SURVEY_STAGE = createSurveyStage({
   game: StageGame.BBOT,
   questions: [
     createMultipleChoiceSurveyQuestion({
-      questionTitle: 'What is your age?',
-      options: createMultipleChoiceItems([
-        'Under 18',
-        '18-24',
-        '25-34',
-        '35-44',
-        '45-54',
-        '55-64',
-        '65 or older',
-        'Prefer not to answer',
-      ]),
-    }),
-
-    createMultipleChoiceSurveyQuestion({
-      questionTitle:
-        'Which of the following best describes your current gender identity? (Select one)',
-      options: createMultipleChoiceItems([
-        'Female',
-        'Male',
-        'Non-binary / Third gender',
-        'Another gender identity',
-        'Prefer not to answer',
-      ]),
-    }),
-
-    createMultipleChoiceSurveyQuestion({
       questionTitle: 'Are you currently able to become pregnant?',
       options: createMultipleChoiceItems(['Yes', 'No', 'Prefer not to answer']),
-    }),
-
-    createMultipleChoiceSurveyQuestion({
-      questionTitle:
-        'Which of the following describe your race and/or ethnicity? (Select all that apply)',
-      options: createMultipleChoiceItems([
-        'American Indian or Alaska Native',
-        'Asian',
-        'Black or African American',
-        'Hispanic, Latino, or Spanish origin',
-        'Middle Eastern or North African',
-        'Native Hawaiian or Other Pacific Islander',
-        'White/Caucasian',
-        'Some other race, ethnicity, or origin',
-        'Prefer not to answer',
-      ]),
     }),
 
     createMultipleChoiceSurveyQuestion({
