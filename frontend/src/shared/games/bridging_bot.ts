@@ -214,8 +214,8 @@ const BBOT_DEBRIEF_TEXT = `**The study is now complete. Thank you for participat
 
 Abortion rights is an important policy issue. Here are some links to additional resources if you would like to learn more about different perspectives on this topic:
 
-- Pro-choice perspectives: [Center for Reproductive Rights resources & research](https://reproductiverights.org/get-involved/featured-resources/)
-- Pro-life perspectives: [National Right to Life fact sheet](https://nrlc.org/factsheets/)
+- Pro-choice perspectives: [Center for Reproductive Rights resources & research](https://chatstudy.short.gy/center-for-reproductive-rights-research)
+- Pro-life perspectives: [National Right to Life fact sheet](https://chatstudy.short.gy/national-right-to-life)
 
 During your chat you were randomly assigned to a condition that involved either (a) no moderator message, (b) a standard pre-written message, or (c) a message written by an AI moderation system we are testing. The system is designed to help support constructive disagreement in online conversations. The goal of our study is to understand whether this form of moderation can improve the quality of text-based online conversations.
 
@@ -610,7 +610,11 @@ const BBOT_TRANSFER_STAGE = createTransferStage({
   participantCounts: {illegal: 1, legal: 1},
 });
 
-const BBOT_CHAT_INTRO_TEXT = `On the next screen, you will have a conversation with another participant. To get started, explain your position on abortion policy. What should the law be, and why?`;
+const BBOT_CHAT_INTRO_TEXT = `On the next screen, you will have a chat conversation about abortion policy with another participant who may see the issue differently.
+
+The chat is anonymous and will last 10 minutes.
+
+**In your first message, please share a brief statement of your view on abortion policy (1-2 sentences is plenty). What, if anything, should the law allow or restrict, and why?**`;
 
 const BBOT_CHAT_INTRO_STAGE = createInfoStage({
   id: 'chat_intro',
@@ -625,7 +629,7 @@ const BBOT_CHAT_STAGE = createChatStage({
   timeLimitInMinutes: 10,
   descriptions: {
     primaryText:
-      'In this discussion, you will have a conversation with one other participant. To get started, explain your position on abortion policy. What should the law be, and why? Your conversation will be shown to other participants in a later phase of the experiment, where they will be asked to share their opinions about what you have said. A facilitator bot may sometimes chime in as well.',
+      "You are now in a chat conversation with another participant. To start the conversation, please share a brief statement of your view on abortion policy (1-2 sentences). What, if anything, should the law allow or restrict, and why? After sending your first message, please read your partner's messages and continue the discussion.",
     infoText: '',
     helpText: '',
   },
