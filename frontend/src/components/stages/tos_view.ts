@@ -52,14 +52,14 @@ export class TOSView extends MobxLitElement {
         <label class="checkbox-wrapper">
           <md-checkbox
             touch-target="wrapper"
-            aria-label="Accept the Terms of Service"
+            aria-label="Agree to participate"
             ?checked=${timestamp !== null}
             ?disabled=${this.participantService.disableStage}
             @click=${handleTOSClick}
           >
           </md-checkbox>
           <div class="timestamp-wrapper">
-            <strong>I accept the Terms of Service</strong>
+            <strong>I agree to participate</strong>
             ${timestamp
               ? html`<div class="ack">
                   Accepted at ${convertUnifiedTimestampToDate(timestamp)}
