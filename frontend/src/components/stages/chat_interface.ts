@@ -18,6 +18,7 @@ import {ExperimentService} from '../../services/experiment.service';
 import {ParticipantService} from '../../services/participant.service';
 import {ParticipantAnswerService} from '../../services/participant.answer';
 import {RouterService} from '../../services/router.service';
+import {getHashBasedColor} from '../../shared/utils';
 
 import {
   ChatDiscussionType,
@@ -48,6 +49,23 @@ export class ChatInterface extends MobxLitElement {
   @property() showInfo = false;
   @state() readyToEndDiscussionLoading = false;
   @state() isAlertLoading = false;
+  @state() mobileView = false;
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.updateResponsiveState();
+    window.addEventListener('resize', this.updateResponsiveState);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    window.removeEventListener('resize', this.updateResponsiveState);
+  }
+
+  private updateResponsiveState = () => {
+    const isSmall = window.innerWidth <= 720;
+    this.mobileView = isSmall;
+  };
 
   private sendUserInput() {
     if (!this.stage) return;
@@ -86,6 +104,13 @@ export class ChatInterface extends MobxLitElement {
     // Non-discussion messages
     const messages = this.cohortService.chatMap[stageId] ?? [];
 
+    // Only show intro text in chat on small screens
+    const introNode = this.mobileView
+      ? html`<div class="chat-info-message">
+          ${this.renderStageDescription()}
+        </div>`
+      : nothing;
+
     // If discussion threads, render each thread
     if (stage.discussions.length > 0) {
       let discussions = stage.discussions;
@@ -97,10 +122,10 @@ export class ChatInterface extends MobxLitElement {
         );
         discussions = discussions.slice(0, index + 1);
       }
-
       return html`
         <div class="chat-scroll">
           <div class="chat-history">
+            ${introNode}
             ${discussions.map((discussion, index) =>
               this.renderChatDiscussionThread(stage, index),
             )}
@@ -116,7 +141,7 @@ export class ChatInterface extends MobxLitElement {
     return html`
       <div class="chat-scroll">
         <div class="chat-history">
-          ${messages.map(this.renderChatMessage.bind(this))}
+          ${introNode} ${messages.map(this.renderChatMessage.bind(this))}
         </div>
       </div>
     `;
@@ -302,6 +327,51 @@ export class ChatInterface extends MobxLitElement {
     `;
   }
 
+  private renderParticipantsTop() {
+    if (!this.mobileView || !this.stage) return nothing;
+    const activeParticipants = this.cohortService.activeParticipants;
+    const mediators = this.cohortService.getMediatorsForStage(this.stage.id);
+    return html`
+      <div class="chat-participants-top">
+        <div class="chat-participants-title">
+          Participants (${activeParticipants.length + mediators.length})
+        </div>
+        <div class="chat-participants-wrapper">
+          ${activeParticipants.map(
+            (participant) => html`
+              <participant-profile-display
+                .profile=${participant}
+                .showIsSelf=${participant.publicId ===
+                this.participantService.profile?.publicId}
+                displayType="chat"
+              ></participant-profile-display>
+            `,
+          )}
+          ${mediators.map(
+            (mediator) => html`
+              <profile-display
+                .profile=${mediator}
+                .color=${getHashBasedColor(
+                  mediator.agentConfig?.agentId ?? mediator.id ?? '',
+                )}
+                displayType="chat"
+              ></profile-display>
+            `,
+          )}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderStageDescription() {
+    if (!this.stage) return nothing;
+    // Pass noBorder=true when rendering in chat-info-message
+    return html`<stage-description
+      .stage=${this.stage}
+      noBorder
+    ></stage-description>`;
+  }
+
   override render() {
     if (!this.stage) return nothing;
     const currentDiscussionId = this.cohortService.getChatDiscussionId(
@@ -337,6 +407,7 @@ export class ChatInterface extends MobxLitElement {
     };
 
     return html`
+      ${this.renderParticipantsTop()}
       <div class="chat-content">
         ${this.cohortService.isChatLoading
           ? html`<div>Loading...</div>`

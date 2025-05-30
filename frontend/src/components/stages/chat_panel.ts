@@ -175,6 +175,9 @@ export class ChatPanel extends MobxLitElement {
 
   private renderParticipantList() {
     const activeParticipants = this.cohortService.activeParticipants;
+    const mediators = this.cohortService.getMediatorsForStage(
+      this.stage?.id ?? '',
+    );
 
     if (!this.stage) {
       return nothing;
@@ -183,14 +186,12 @@ export class ChatPanel extends MobxLitElement {
     return html`
       <div class="panel-item">
         <div class="panel-item-title">
-          Participants (${activeParticipants.length})
+          Participants (${activeParticipants.length + mediators.length})
         </div>
         ${activeParticipants.map((participant) =>
           this.renderProfile(participant),
         )}
-        ${this.cohortService
-          .getMediatorsForStage(this.stage.id)
-          .map((mediator) => this.renderMediator(mediator))}
+        ${mediators.map((mediator) => this.renderMediator(mediator))}
       </div>
     `;
   }
