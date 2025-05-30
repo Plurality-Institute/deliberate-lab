@@ -4,7 +4,6 @@ import {
   UpdateSurveyStageParticipantAnswerData,
 } from '@deliberation-lab/utils';
 
-import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import {onCall} from 'firebase-functions/v2/https';
 
@@ -65,7 +64,9 @@ export const updateSurveyStageParticipantAnswer = onCall(async (request) => {
     // Store the answers in the public version as well, since they are needed in a timely
     // fashion by handleAutomaticTransfer
     transaction.set(publicDocument, {participantAnswerMap}, {merge: true});
-    console.log(`Updated public stage data for ${data.participantPublicId} with ${participantAnswerMap}`);
+    console.log(
+      `Updated public stage data for ${data.participantPublicId} with ${participantAnswerMap}`,
+    );
   });
 
   return {id: document.id};

@@ -7,9 +7,6 @@ import {
   StageParticipantAnswer,
 } from '@deliberation-lab/utils';
 
-import * as admin from 'firebase-admin';
-import * as functions from 'firebase-functions';
-import {onCall} from 'firebase-functions/v2/https';
 import {onDocumentWritten} from 'firebase-functions/v2/firestore';
 
 import {app} from '../app';
