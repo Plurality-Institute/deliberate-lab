@@ -152,6 +152,16 @@ stage-footer {
   margin-bottom: common.$spacing-small;
 }
 
+.chat-participants-title-row {
+  display: flex;
+  align-items: center;
+}
+
+.chat-timer-mobile {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
 .chat-info-message {
   @include common.flex-row;
   background: var(--md-sys-color-surface);

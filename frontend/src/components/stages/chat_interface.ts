@@ -50,22 +50,57 @@ export class ChatInterface extends MobxLitElement {
   @state() readyToEndDiscussionLoading = false;
   @state() isAlertLoading = false;
   @state() mobileView = false;
-
-  connectedCallback() {
-    super.connectedCallback();
-    this.updateResponsiveState();
-    window.addEventListener('resize', this.updateResponsiveState);
-  }
-
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    window.removeEventListener('resize', this.updateResponsiveState);
-  }
+  @state() timeRemainingInSeconds: number | null = null;
 
   private updateResponsiveState = () => {
     const isSmall = window.innerWidth <= 720;
     this.mobileView = isSmall;
   };
+
+  private timerIntervalId: number | null = null;
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.updateResponsiveState();
+    window.addEventListener('resize', this.updateResponsiveState);
+    this.startTimer();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    window.removeEventListener('resize', this.updateResponsiveState);
+    this.clearTimer();
+  }
+
+  private startTimer() {
+    this.updateTimeRemaining();
+    this.timerIntervalId = window.setInterval(() => {
+      this.updateTimeRemaining();
+    }, 1000);
+  }
+
+  private clearTimer() {
+    if (this.timerIntervalId !== null) {
+      clearInterval(this.timerIntervalId);
+      this.timerIntervalId = null;
+    }
+  }
+
+  private updateTimeRemaining() {
+    if (!this.stage || this.stage.timeLimitInMinutes == null) {
+      this.timeRemainingInSeconds = null;
+      return;
+    }
+    let timeRemainingInSeconds = this.stage.timeLimitInMinutes * 60;
+    const messages = this.cohortService.chatMap[this.stage.id] ?? [];
+    if (messages.length) {
+      const timeElapsed =
+        Date.now() / 1000 - (messages[0].timestamp?.seconds ?? 0);
+      timeRemainingInSeconds -= timeElapsed;
+    }
+    this.timeRemainingInSeconds =
+      timeRemainingInSeconds > 0 ? Math.floor(timeRemainingInSeconds) : 0;
+  }
 
   private sendUserInput() {
     if (!this.stage) return;
@@ -331,10 +366,27 @@ export class ChatInterface extends MobxLitElement {
     if (!this.mobileView || !this.stage) return nothing;
     const activeParticipants = this.cohortService.activeParticipants;
     const mediators = this.cohortService.getMediatorsForStage(this.stage.id);
+    // Timer display for mobile
+    let timerText: unknown = undefined;
+    if (this.timeRemainingInSeconds !== null) {
+      if (this.timeRemainingInSeconds > 0) {
+        timerText = html`<span class="chat-timer-mobile"
+          >Time remaining: ${this.formatTime(this.timeRemainingInSeconds)}</span
+        >`;
+      } else {
+        timerText = html`<span class="chat-timer-mobile"
+          >Conversation ended</span
+        >`;
+      }
+    }
     return html`
       <div class="chat-participants-top">
-        <div class="chat-participants-title">
-          Participants (${activeParticipants.length + mediators.length})
+        <div class="chat-participants-title-row">
+          <span
+            >Participants
+            (${activeParticipants.length + mediators.length})</span
+          >
+          ${timerText}
         </div>
         <div class="chat-participants-wrapper">
           ${activeParticipants.map(
@@ -363,6 +415,22 @@ export class ChatInterface extends MobxLitElement {
     `;
   }
 
+  private formatTime(seconds: number | null): string {
+    if (seconds === null) return '';
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, '0')}:${mins
+        .toString()
+        .padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    } else {
+      return `${mins.toString().padStart(2, '0')}:${secs
+        .toString()
+        .padStart(2, '0')}`;
+    }
+  }
+
   private renderStageDescription() {
     if (!this.stage) return nothing;
     // Pass noBorder=true when rendering in chat-info-message
@@ -382,14 +450,10 @@ export class ChatInterface extends MobxLitElement {
     let disableNext = false;
     const requireFullTime = this.stage.requireFullTime === true;
     if (requireFullTime && this.stage.timeLimitInMinutes !== null) {
-      let timeRemainingInSeconds = this.stage.timeLimitInMinutes * 60;
-      const messages = this.cohortService.chatMap[this.stage.id] ?? [];
-      if (messages.length) {
-        const timeElapsed =
-          Date.now() / 1000 - (messages[0].timestamp?.seconds ?? 0);
-        timeRemainingInSeconds -= timeElapsed;
-      }
-      if (timeRemainingInSeconds > 0) {
+      if (
+        this.timeRemainingInSeconds !== null &&
+        this.timeRemainingInSeconds > 0
+      ) {
         disableNext = true;
       }
     }
