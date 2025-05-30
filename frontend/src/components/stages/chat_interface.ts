@@ -53,8 +53,7 @@ export class ChatInterface extends MobxLitElement {
   @state() timeRemainingInSeconds: number | null = null;
 
   private updateResponsiveState = () => {
-    const isSmall = window.innerWidth <= 720;
-    this.mobileView = isSmall;
+    this.mobileView = window.innerWidth <= 1024;
   };
 
   private timerIntervalId: number | null = null;
@@ -370,12 +369,12 @@ export class ChatInterface extends MobxLitElement {
     let timerText: unknown = undefined;
     if (this.timeRemainingInSeconds !== null) {
       if (this.timeRemainingInSeconds > 0) {
-        timerText = html`<span class="chat-timer-mobile"
+        timerText = html`<span class="chat-timer-mobile countdown"
           >Time remaining: ${this.formatTime(this.timeRemainingInSeconds)}</span
         >`;
       } else {
-        timerText = html`<span class="chat-timer-mobile"
-          >Conversation ended</span
+        timerText = html`<span class="chat-timer-mobile ended countdown"
+          >Discussion ended</span
         >`;
       }
     }

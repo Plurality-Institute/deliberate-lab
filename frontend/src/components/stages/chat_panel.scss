@@ -8,7 +8,7 @@
   overflow: auto;
   width: 240px;
 
-  @include common.viewport-small {
+  @include common.viewport-medium {
     display: none;
   }
 }

@@ -173,3 +173,13 @@ stage-footer {
     border-bottom: none;
   }
 }
+
+.countdown {
+  @include typescale.label-medium;
+  font-style: italic;
+  color: var(--md-sys-color-secondary);
+}
+
+.ended {
+  color: var(--md-sys-color-tertiary);
+}

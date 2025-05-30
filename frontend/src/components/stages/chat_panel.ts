@@ -12,7 +12,6 @@ import {customElement, property, state} from 'lit/decorators.js';
 import {core} from '../../core/core';
 import {AgentManager} from '../../services/agent.manager';
 import {AuthService} from '../../services/auth.service';
-import {ExperimentManager} from '../../services/experiment.manager';
 import {CohortService} from '../../services/cohort.service';
 import {ParticipantService} from '../../services/participant.service';
 
@@ -25,7 +24,6 @@ import {
   checkApiKeyExists,
   getTimeElapsed,
 } from '@deliberation-lab/utils';
-import {isActiveParticipant} from '../../shared/participant.utils';
 import {
   convertUnifiedTimestampToDate,
   getHashBasedColor,
@@ -40,7 +38,6 @@ export class ChatPanel extends MobxLitElement {
   private readonly agentManager = core.getService(AgentManager);
   private readonly authService = core.getService(AuthService);
   private readonly cohortService = core.getService(CohortService);
-  private readonly experimentManager = core.getService(ExperimentManager);
   private readonly participantService = core.getService(ParticipantService);
 
   @property() stage: ChatStageConfig | null = null;
