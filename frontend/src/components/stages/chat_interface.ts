@@ -28,6 +28,7 @@ import {
   DiscussionItem,
   StageKind,
 } from '@deliberation-lab/utils';
+
 import {styles} from './chat_interface.scss';
 
 /** Chat interface component */
@@ -86,19 +87,31 @@ export class ChatInterface extends MobxLitElement {
   }
 
   private updateTimeRemaining() {
-    if (!this.stage || this.stage.timeLimitInMinutes == null) {
+    const chatStartTimestamp = this.chatStartTimestamp();
+    if (
+      chatStartTimestamp === null ||
+      this.stage == null ||
+      this.stage.timeLimitInMinutes == null
+    ) {
       this.timeRemainingInSeconds = null;
       return;
     }
-    let timeRemainingInSeconds = this.stage.timeLimitInMinutes * 60;
-    const messages = this.cohortService.chatMap[this.stage.id] ?? [];
-    if (messages.length) {
-      const timeElapsed =
-        Date.now() / 1000 - (messages[0].timestamp?.seconds ?? 0);
-      timeRemainingInSeconds -= timeElapsed;
-    }
+    const timeElapsed = Date.now() / 1000 - chatStartTimestamp;
+    const timeRemainingInSeconds =
+      this.stage.timeLimitInMinutes * 60 - timeElapsed;
     this.timeRemainingInSeconds =
       timeRemainingInSeconds > 0 ? Math.floor(timeRemainingInSeconds) : 0;
+  }
+
+  private chatStartTimestamp() {
+    if (!this.stage || this.stage.timeLimitInMinutes == null) {
+      return null;
+    }
+    const messages = this.cohortService.chatMap[this.stage.id] ?? [];
+    if (messages.length) {
+      return messages[0].timestamp?.seconds ?? null;
+    }
+    return null;
   }
 
   private sendUserInput() {
@@ -369,8 +382,17 @@ export class ChatInterface extends MobxLitElement {
     let timerText: unknown = undefined;
     if (this.timeRemainingInSeconds !== null) {
       if (this.timeRemainingInSeconds > 0) {
+        const chatStart = this.chatStartTimestamp();
+        let formattedTime = '';
+        if (chatStart !== null) {
+          const date = new Date(chatStart * 1000);
+          const hours = date.getHours().toString().padStart(2, '0');
+          const minutes = date.getMinutes().toString().padStart(2, '0');
+          formattedTime = `${hours}:${minutes}`;
+        }
         timerText = html`<span class="chat-timer-mobile countdown"
-          >Time remaining: ${this.formatTime(this.timeRemainingInSeconds)}</span
+          >${this.stage.timeLimitInMinutes} min chat, began
+          ${formattedTime}</span
         >`;
       } else {
         timerText = html`<span class="chat-timer-mobile ended countdown"
