@@ -71,8 +71,12 @@ export class CohortSummary extends MobxLitElement {
       return nothing;
     }
 
+    const setCurrentCohort = () => {
+      this.experimentManager.setCurrentCohortId(this.cohort?.id);
+    };
+
     return html`
-      <div class="header">
+      <div class="header" @click=${setCurrentCohort}>
         <div class="left">
           <pr-icon-button
             icon=${this.isExpanded
@@ -106,8 +110,8 @@ export class CohortSummary extends MobxLitElement {
           </div>
         </div>
         <div class="right">
-          ${this.renderAddParticipantButton()} ${this.renderLockButton()}
-          ${this.renderCopyButton()} ${this.renderSettingsButton()}
+          ${this.renderLockButton()} ${this.renderCopyButton()}
+          ${this.renderEditButton()}
         </div>
       </div>
       ${this.renderDescription()}
@@ -122,50 +126,18 @@ export class CohortSummary extends MobxLitElement {
     return html`<div class="description">${description}</div>`;
   }
 
-  private renderSettingsButton() {
+  private renderEditButton() {
     return html`
-      <pr-tooltip text="Edit cohort settings" position="BOTTOM_END">
+      <pr-tooltip text="Edit cohort" position="BOTTOM_END">
         <pr-icon-button
-          icon="settings"
+          icon="edit_note"
           color="neutral"
           variant="default"
           @click=${() => {
-            this.experimentManager.setCohortEditing(this.cohort);
-          }}
-        >
-        </pr-icon-button>
-      </pr-tooltip>
-    `;
-  }
-
-  private renderAddParticipantButton() {
-    if (!this.cohort) {
-      return nothing;
-    }
-
-    const isDisabled = () => {
-      if (!this.experimentService.experiment || !this.cohort) {
-        return true;
-      }
-      return (
-        this.experimentManager.isFullCohort(this.cohort) ||
-        this.experimentService.experiment.cohortLockMap[this.cohort.id]
-      );
-    };
-
-    return html`
-      <pr-tooltip text="Add participant" position="BOTTOM_END">
-        <pr-icon-button
-          icon="person_add"
-          color="tertiary"
-          variant="default"
-          ?disabled=${isDisabled()}
-          ?loading=${this.experimentManager.isWritingParticipant}
-          @click=${async () => {
-            if (!this.cohort) return;
-            this.analyticsService.trackButtonClick(ButtonClick.PARTICIPANT_ADD);
-            await this.experimentManager.createParticipant(this.cohort.id);
-            this.isExpanded = true;
+            this.experimentManager.setCurrentCohortId(
+              this.cohort?.id ?? undefined,
+            );
+            this.experimentManager.setShowCohortEditor(true);
           }}
         >
         </pr-icon-button>
@@ -223,6 +195,7 @@ export class CohortSummary extends MobxLitElement {
       return nothing;
     }
 
+    // TODO: Refactor into participant-list component
     const participants = this.experimentManager.getCohortParticipants(
       this.cohort.id,
     );
@@ -234,7 +207,6 @@ export class CohortSummary extends MobxLitElement {
     const isTransferTimeout = (participant: ParticipantProfile) => {
       return participant.currentStatus == ParticipantStatus.TRANSFER_TIMEOUT;
     };
-
 
     const isOnTransferStage = (participant: ParticipantProfile) => {
       const stage = this.experimentService.getStage(participant.currentStageId);
@@ -249,12 +221,12 @@ export class CohortSummary extends MobxLitElement {
           .sort((a, b) => {
             if (isTransferTimeout(a)) {
               return 1;
-            } 
+            }
 
             if (isTransferTimeout(b)) {
               return -1;
             }
-            
+
             const aIsTransfer = isOnTransferStage(a) ? 0 : 1; // 0 if true, 1 if false
             const bIsTransfer = isOnTransferStage(b) ? 0 : 1;
             return (

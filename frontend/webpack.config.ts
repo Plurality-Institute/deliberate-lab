@@ -116,7 +116,7 @@ export default (
       allowedHosts: 'all',
       port: 4201,
     },
-    // uncomment to enable external sourcemaps in prod, for easier debugging
-    // devtool: isProd ? 'source-map' : 'eval-source-map',
+    // enable external sourcemaps in prod, for debugging
+    devtool: isProd ? 'source-map' : 'eval-source-map',
   };
 };

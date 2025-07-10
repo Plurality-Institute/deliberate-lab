@@ -70,7 +70,7 @@ export class ParticipantSummary extends MobxLitElement {
           <participant-profile-display .profile=${this.participant}>
           </participant-profile-display>
           ${this.renderStatus()} ${this.renderAttentionStatus()}
-          ${this.renderTimeElapsed()}
+          ${this.renderTimeElapsed()} ${this.renderIsAgent()}
         </div>
         <div class="buttons">
           <participant-progress-bar
@@ -83,6 +83,13 @@ export class ParticipantSummary extends MobxLitElement {
         </div>
       </div>
     `;
+  }
+
+  private renderIsAgent() {
+    if (this.participant && !this.participant.agentConfig) {
+      return nothing;
+    }
+    return html`<div class="chip">🤖</div>`;
   }
 
   private renderTimeElapsed() {
@@ -143,6 +150,12 @@ export class ParticipantSummary extends MobxLitElement {
 
   private renderStatus() {
     if (!this.participant) return nothing;
+
+    const {connected} = this.participant;
+
+    if(!connected && !isParticipantEndedExperiment(this.participant)) {
+      return html`<div class="chip error">disconnected</div>`;
+    }
 
     if (isPendingParticipant(this.participant)) {
       return html`<div class="chip secondary">transfer pending</div>`;

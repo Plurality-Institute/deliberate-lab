@@ -63,7 +63,7 @@ export class StageBuilderDialog extends MobxLitElement {
   private readonly experimentEditor = core.getService(ExperimentEditor);
 
   @property({type: Boolean})
-  showGames: boolean = false;
+  showTemplates: boolean = false;
 
   override render() {
     return html`
@@ -81,7 +81,9 @@ export class StageBuilderDialog extends MobxLitElement {
           </pr-icon-button>
         </div>
         <div class="body">
-          ${this.showGames ? this.renderGameCards() : this.renderStageCards()}
+          ${this.showTemplates
+            ? this.renderTemplateCards()
+            : this.renderStageCards()}
         </div>
       </div>
     `;
@@ -95,14 +97,14 @@ export class StageBuilderDialog extends MobxLitElement {
       });
     };
 
-    const toggleView = (showGames: boolean) => {
-      this.showGames = showGames;
+    const toggleView = (showTemplates: boolean) => {
+      this.showTemplates = showTemplates;
     };
 
     return html`
       <div class="tabs">
         <div
-          class=${getClasses(!this.showGames)}
+          class=${getClasses(!this.showTemplates)}
           @click=${() => {
             toggleView(false);
           }}
@@ -110,21 +112,22 @@ export class StageBuilderDialog extends MobxLitElement {
           Add stages
         </div>
         <div
-          class=${getClasses(this.showGames)}
+          class=${getClasses(this.showTemplates)}
           @click=${() => {
             toggleView(true);
           }}
         >
-          Load game
+          Load template
         </div>
       </div>
     `;
   }
 
-  private renderGameCards() {
+  private renderTemplateCards() {
     return html`
       <div class="banner error">
-        ⚠️ Loading a game will override any current stages in your configuration
+        ⚠️ Loading a template will override all existing stages in your
+        configuration
       </div>
       <div class="card-gallery-wrapper">
         ${this.renderLASCard()} ${this.renderLASCard(true)}

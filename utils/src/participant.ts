@@ -1,3 +1,4 @@
+import {ProfileAgentConfig} from './agent';
 import {UnifiedTimestamp, generateId} from './shared';
 import {
   ALTERNATE_PROFILE_SET_ID,
@@ -35,6 +36,7 @@ export interface ParticipantProfile extends ParticipantProfileBase {
   currentStatus: ParticipantStatus;
   timestamps: ProgressTimestamps;
   anonymousProfiles: Record<string, AnonymousProfileMetadata>;
+  connected: boolean | null;
 }
 
 /** Anonymous profile data generated from profile set. */
@@ -47,6 +49,8 @@ export interface AnonymousProfileMetadata {
 /** Participant profile available in private participants collection. */
 export interface ParticipantProfileExtended extends ParticipantProfile {
   privateId: string;
+  // If null, operated by human (otherwise, specifies agent persona, model)
+  agentConfig: ProfileAgentConfig | null;
 }
 
 export interface ProgressTimestamps {
@@ -148,6 +152,8 @@ export function createParticipantProfileExtended(
     currentStatus: config.currentStatus ?? ParticipantStatus.IN_PROGRESS,
     timestamps: config.timestamps ?? createProgressTimestamps(),
     anonymousProfiles: {},
+    connected: config.agentConfig ? true : false,
+    agentConfig: config.agentConfig ?? null,
   };
 }
 

@@ -8,8 +8,11 @@
  * Note: there already exists a client library for JavaScript, but not for Typescript.
  */
 
-import {OllamaServerConfig, AgentGenerationConfig} from '@deliberation-lab/utils';
-import {ModelResponse} from './model.response';
+import {
+  OllamaServerConfig,
+  ModelGenerationConfig,
+} from '@deliberation-lab/utils';
+import {ModelResponse, ModelResponseStatus} from './model.response';
 
 /**
  * The JSON schema for LLM input understood by Ollama.
@@ -47,7 +50,11 @@ export async function ollamaChat(
     body: JSON.stringify(messageObjects),
   });
   const responseMessage = await decodeResponse(response);
-  return {text: responseMessage};
+  return {
+    // TODO(mkbehr): handle errors from this API
+    status: ModelResponseStatus.OK,
+    text: responseMessage,
+  };
 }
 
 /**
@@ -84,11 +91,11 @@ async function decodeResponse(response: Response): Promise<string> {
 function encodeMessages(
   messages: string[],
   modelName: string,
-  generationConfig: AgentGenerationConfig,
+  generationConfig: ModelGenerationConfig,
 ): OutgoingMessage {
   const messageObjs: OllamaMessage[] = messages.map((message) => ({
     role: 'user',
-    content: message
+    content: message,
   }));
 
   const customFields = Object.fromEntries(
@@ -106,7 +113,7 @@ function encodeMessages(
       temperature: generationConfig.temperature,
       top_p: generationConfig.topP,
     },
-    ...customFields
+    ...customFields,
   };
 }
 

@@ -22,12 +22,16 @@ export * from './data';
 export * from './cohort';
 export * from './cohort.validation';
 
+// Log
+export * from './log';
+
 // Mediator
 export * from './mediator';
 export * from './mediator.validation';
 
 // Participant
 export * from './participant';
+export * from './participant.prompts';
 export * from './participant.validation';
 export * from './profile_sets';
 
@@ -38,6 +42,7 @@ export * from './structured_output';
 
 // Stages
 export * from './stages/stage';
+export * from './stages/stage.prompts';
 export * from './stages/stage.validation';
 export * from './stages/chat_stage';
 export * from './stages/chat_stage.prompts';
@@ -50,6 +55,7 @@ export * from './stages/ranking_stage';
 export * from './stages/ranking_stage.prompts';
 export * from './stages/ranking_stage.validation';
 export * from './stages/info_stage';
+export * from './stages/info_stage.prompts';
 export * from './stages/info_stage.validation';
 export * from './stages/payout_stage';
 export * from './stages/payout_stage.validation';
@@ -60,8 +66,10 @@ export * from './stages/reveal_stage.validation';
 export * from './stages/salesperson_stage';
 export * from './stages/salesperson_stage.validation';
 export * from './stages/survey_stage';
+export * from './stages/survey_stage.prompts';
 export * from './stages/survey_stage.validation';
 export * from './stages/tos_stage';
+export * from './stages/tos_stage.prompts';
 export * from './stages/tos_stage.validation';
 export * from './stages/transfer_stage';
 export * from './stages/transfer_stage.validation';

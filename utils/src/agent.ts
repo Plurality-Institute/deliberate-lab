@@ -4,7 +4,10 @@ import {
 } from './participant';
 import {generateId} from './shared';
 import {StageKind} from './stages/stage';
-import {DEFAULT_AGENT_MEDIATOR_PROMPT} from './stages/chat_stage.prompts';
+import {
+  DEFAULT_AGENT_MEDIATOR_PROMPT,
+  DEFAULT_AGENT_PARTICIPANT_CHAT_PROMPT,
+} from './stages/chat_stage.prompts';
 import {
   StructuredOutputConfig,
   createStructuredOutputConfig,
@@ -67,7 +70,7 @@ export interface AgentPromptSettings {
   // Whether or not to include context from all previously completed
   // stages
   includeStageHistory: boolean;
-  // Whether or not to include information (e.g., stage description)
+  // Whether or not to include information (stage description/info/help)
   // shown to users
   includeStageInfo: boolean;
   // TODO(mkbehr): Add few-shot examples
@@ -108,6 +111,7 @@ export interface BaseAgentPromptConfig {
   promptContext: string; // custom prompt content
   generationConfig: ModelGenerationConfig;
   promptSettings: AgentPromptSettings;
+  structuredOutputConfig: StructuredOutputConfig;
 }
 
 /** Prompt config for completing stage (e.g., survey questions). */
@@ -118,7 +122,6 @@ export type AgentParticipantPromptConfig = BaseAgentPromptConfig;
  */
 export interface AgentChatPromptConfig extends BaseAgentPromptConfig {
   chatSettings: AgentChatSettings;
-  structuredOutputConfig: StructuredOutputConfig;
   // DEPRECATED: Use structuredOutputConfig, not responseConfig
   responseConfig?: AgentResponseConfig;
 }
@@ -157,6 +160,11 @@ export const DEFAULT_AGENT_API_TYPE = ApiKeyType.GEMINI_API_KEY;
 
 export const DEFAULT_AGENT_API_MODEL = 'gemini-1.5-pro-latest';
 
+export const DEFAULT_AGENT_MODEL_SETTINGS: AgentModelSettings = {
+  apiType: DEFAULT_AGENT_API_TYPE,
+  modelName: DEFAULT_AGENT_API_MODEL,
+};
+
 // ************************************************************************* //
 // FUNCTIONS                                                                 //
 // ************************************************************************* //
@@ -178,7 +186,7 @@ export function createModelGenerationConfig(
   return {
     maxTokens: config.maxTokens ?? 8192,
     stopSequences: config.stopSequences ?? [],
-    temperature: config.temperature ?? 0.7,
+    temperature: config.temperature ?? 1.0,
     topP: config.topP ?? 1.0,
     frequencyPenalty: config.frequencyPenalty ?? 0.0,
     presencePenalty: config.presencePenalty ?? 0.0,
@@ -193,7 +201,7 @@ export function createAgentChatSettings(
     wordsPerMinute: config.wordsPerMinute ?? 100,
     minMessagesBeforeResponding: config.minMessagesBeforeResponding ?? 0,
     canSelfTriggerCalls: config.canSelfTriggerCalls ?? false,
-    maxResponses: config.maxResponses ?? 20,
+    maxResponses: config.maxResponses ?? 100,
   };
 }
 
@@ -210,12 +218,17 @@ export function createAgentPromptSettings(
 export function createAgentChatPromptConfig(
   id: string, // stage ID
   type: StageKind, // stage kind
+  personaType: AgentPersonaType, // mediator or participant
   config: Partial<AgentChatPromptConfig> = {},
 ): AgentChatPromptConfig {
   return {
     id,
     type,
-    promptContext: config.promptContext ?? DEFAULT_AGENT_MEDIATOR_PROMPT,
+    promptContext:
+      config.promptContext ??
+      (personaType === AgentPersonaType.MEDIATOR
+        ? DEFAULT_AGENT_MEDIATOR_PROMPT
+        : DEFAULT_AGENT_PARTICIPANT_CHAT_PROMPT),
     promptSettings: config.promptSettings ?? createAgentPromptSettings(),
     generationConfig: config.generationConfig ?? createModelGenerationConfig(),
     chatSettings: config.chatSettings ?? createAgentChatSettings(),
@@ -237,6 +250,26 @@ export function createAgentPersonaConfig(
       config.defaultProfile ??
       createParticipantProfileBase({
         name: type === AgentPersonaType.MEDIATOR ? 'Mediator' : '',
+        avatar: '🙋',
+      }),
+    defaultModelSettings:
+      config.defaultModelSettings ?? createAgentModelSettings(),
+  };
+}
+
+export function createAgentParticipantPersonaConfig(
+  config: Partial<AgentPersonaConfig> = {},
+): AgentPersonaConfig {
+  return {
+    id: config.id ?? generateId(),
+    name: config.name ?? 'Agent Participant',
+    type: AgentPersonaType.PARTICIPANT,
+    isDefaultAddToCohort: config.isDefaultAddToCohort ?? false,
+    defaultProfile:
+      config.defaultProfile ??
+      createParticipantProfileBase({
+        name: '',
+        avatar: '',
       }),
     defaultModelSettings:
       config.defaultModelSettings ?? createAgentModelSettings(),

@@ -5,20 +5,18 @@ import {
   CreateParticipantData,
   Experiment,
   ParticipantProfileExtended,
-  ParticipantProfileExtendedData,
   ParticipantStatus,
   StageKind,
   SurveyStagePublicData,
   createParticipantProfileExtended,
-  generateParticipantPublicId,
   setProfile,
+  StageConfig,
 } from '@deliberation-lab/utils';
 import {
   updateCohortStageUnlocked,
   updateParticipantNextStage,
 } from './participant.utils';
 
-import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import {onCall} from 'firebase-functions/v2/https';
 
@@ -36,7 +34,8 @@ import {
 // ************************************************************************* //
 // createParticipant endpoint                                                //
 //                                                                           //
-// Input structure: { experimentId, cohortId, isAnonymous }                  //
+// Input structure: { experimentId, cohortId, isAnonymous, agentConfig }     //
+// Optional: { prolificId }                                                  //
 // Validation: utils/src/participant.validation.ts                           //
 // ************************************************************************* //
 export const createParticipant = onCall(async (request) => {
@@ -53,6 +52,15 @@ export const createParticipant = onCall(async (request) => {
     currentCohortId: data.cohortId,
     prolificId: data.prolificId,
   });
+
+  // Temporarily always mark participants as connected (PR #537)
+  participantConfig.connected = true; // TODO: Remove this line
+
+  // If agent config is specified, add to participant config
+  if (data.agentConfig) {
+    participantConfig.agentConfig = data.agentConfig;
+    participantConfig.connected = true; // agent is always connected
+  }
 
   // Define document reference
   const document = app
@@ -101,6 +109,7 @@ export const createParticipant = onCall(async (request) => {
   return {id: document.id};
 });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function handleCreateParticipantValidationErrors(data: any) {
   for (const error of Value.Errors(CreateParticipantData, data)) {
     if (isUnionError(error)) {
@@ -151,7 +160,7 @@ export const updateParticipantAcceptedTOS = onCall(async (request) => {
 // Input structure: { experimentId, participantId, stageId }                 //
 // Validation: utils/src/participant.validation.ts                           //
 // ************************************************************************* //
-// The "completedWaiting" map now tracks when the participant has
+// The "readyStages" map tracks when the participant has
 // reached each stage --> this endpoint updates whether the participant
 // is ready to begin the stage. (Waiting is now determined by whether
 // or not the stage is unlocked in CohortConfig)
@@ -284,15 +293,6 @@ export const updateParticipantToNextStage = onCall(async (request) => {
     .collection('participants')
     .doc(privateId);
 
-  // Function to find next stage ID given experiment list of stage IDs
-  const getNextStageId = (stageId: string, stageIds: string[]) => {
-    const currentIndex = stageIds.indexOf(stageId);
-    if (currentIndex >= 0 && currentIndex < stageIds.length - 1) {
-      return stageIds[currentIndex + 1];
-    }
-    return null;
-  };
-
   let response = {currentStageId: null, endExperiment: false};
 
   // Run document write as transaction to ensure consistency
@@ -387,6 +387,7 @@ export const acceptParticipantCheck = onCall(async (request) => {
       participant.currentStatus = ParticipantStatus.IN_PROGRESS;
     }
 
+    // TODO: Handle case where participant has completed experiment
     // TODO: Reset custom message once field exists
 
     transaction.set(document, participant);
@@ -426,8 +427,7 @@ export const acceptParticipantTransfer = onCall(async (request) => {
       await document.get()
     ).data() as ParticipantProfileExtended;
     if (!participant.transferCohortId) {
-      success = false;
-      return;
+      return {success: false};
     }
 
     // Update cohort ID
@@ -502,6 +502,7 @@ export const acceptParticipantTransfer = onCall(async (request) => {
           break;
       }
     }
+    return {success: true};
   });
 
   return response;
