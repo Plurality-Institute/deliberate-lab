@@ -176,7 +176,7 @@ _You must read and agree to these terms to participate in the study._
 **Researchers:**
 
 - Jeffrey Fossett: Plurality Institute
-- Ian Baker: UC Berkeley & Plurality Institute
+- Ian Baker: Plurality Institute
 
 **Sponsor:** Plurality Institute
 
