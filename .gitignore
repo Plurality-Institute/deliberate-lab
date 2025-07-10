@@ -1,10 +1,14 @@
 *.log
 *.DS_Store
 .firebaserc
+.firebase/
 node_modules/
 
 # Packed shared utils package
 *deliberation-lab-utils-*.tgz
+<<<<<<< HEAD
 
 # firebase caches
 .firebase
+=======
+>>>>>>> main

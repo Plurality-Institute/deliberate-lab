@@ -1,6 +1,7 @@
 import {Timestamp} from 'firebase-admin/firestore';
 import {
   AgentModelSettings,
+  AgentParticipantPromptConfig,
   AgentPersonaConfig,
   ApiKeyType,
   ExperimenterData,
@@ -12,12 +13,15 @@ import {
   StructuredOutputConfig,
   makeStructuredOutputPrompt,
 } from '@deliberation-lab/utils';
+import {ModelResponse} from './api/model.response';
 
 import {updateParticipantNextStage} from './participant.utils';
 import {initiateChatDiscussion} from './stages/chat.utils';
+import {completeProfile} from './stages/profile.utils';
 import {getAgentParticipantRankingStageResponse} from './stages/ranking.utils';
 import {getAgentParticipantSurveyStageResponse} from './stages/survey.utils';
 
+import {ModelResponseStatus} from './api/model.response';
 import {getGeminiAPIResponse} from './api/gemini.api';
 import {getOpenAIAPIChatCompletionResponse} from './api/openai.api';
 import {ollamaChat} from './api/ollama.api';
@@ -47,7 +51,7 @@ export async function getAgentResponse(
   }
 
   if (modelSettings.apiType === ApiKeyType.GEMINI_API_KEY) {
-    response = getGeminiResponse(
+    response = await getGeminiResponse(
       data,
       modelSettings.modelName,
       prompt,
@@ -55,7 +59,7 @@ export async function getAgentResponse(
       structuredOutputConfig,
     );
   } else if (modelSettings.apiType === ApiKeyType.OPENAI_API_KEY) {
-    response = getOpenAIAPIResponse(
+    response = await getOpenAIAPIResponse(
       data,
       modelSettings.modelName,
       prompt,
@@ -65,11 +69,16 @@ export async function getAgentResponse(
   } else if (modelSettings.apiType === ApiKeyType.OLLAMA_CUSTOM_URL) {
     response = await getOllamaResponse(data, modelSettings.modelName, prompt);
   } else {
+    response = {
+      status: ModelResponseStatus.CONFIG_ERROR,
+      errorMessage: `Error: invalid apiKey type: ${data.apiKeys.ollamaApiKey.apiKey}`,
+    };
+  }
+
+  if (response.status !== ModelResponseStatus.OK) {
     console.error(
-      'Error: invalid apiKey type: ',
-      data.apiKeys.ollamaApiKey.apiKey,
+      `GetAgentResponse: response error status: ${response.status}; message: ${response.errorMessage}`,
     );
-    response = {text: ''};
   }
 
   return response;
@@ -206,6 +215,11 @@ export async function completeStageAsAgentParticipant(
         participant.agentConfig, // agent config
       );
       break;
+    case StageKind.PROFILE:
+      await completeProfile(experimentId, participant, stage);
+      await completeStage();
+      participantDoc.set(participant);
+      break;
     case StageKind.SALESPERSON:
       initiateChatDiscussion(
         experimentId,
@@ -252,4 +266,26 @@ export async function completeStageAsAgentParticipant(
       await completeStage();
       participantDoc.set(participant);
   }
+}
+
+/** Return agent participant prompt that corresponds to agent. */
+export async function getAgentParticipantPrompt(
+  experimentId: string,
+  stageId: string,
+  agentId: string,
+): AgentParticipantPromptConfig | null {
+  const prompt = await app
+    .firestore()
+    .collection('experiments')
+    .doc(experimentId)
+    .collection('agents')
+    .doc(agentId)
+    .collection('participantPrompts')
+    .doc(stageId)
+    .get();
+
+  if (!prompt.exists) {
+    return null;
+  }
+  return prompt.data() as AgentParticipantPromptConfig;
 }

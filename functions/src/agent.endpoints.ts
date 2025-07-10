@@ -15,6 +15,7 @@ import {
   getOpenAIAPIResponse,
   getOllamaResponse,
 } from './agent.utils';
+import {ModelResponseStatus, ModelResponse} from './api/model.response';
 import {getAgentParticipantRankingStageResponse} from './stages/ranking.utils';
 import {
   getExperimenterData,
@@ -101,6 +102,10 @@ export const testAgentParticipantPrompt = onCall(async (request) => {
     response,
   );
 
+  if (response.status !== ModelResponseStatus.OK) {
+    return {data: `Error: ${response.status}: ${response.errorMessage}`};
+  }
+
   return {data: response};
 });
 
@@ -140,6 +145,10 @@ export const testAgentConfig = onCall(async (request) => {
     JSON.stringify(promptConfig),
     response,
   );
+
+  if (response.status !== ModelResponseStatus.OK) {
+    return {data: `Error: ${response.status}: ${response.errorMessage}`};
+  }
 
   return {data: response.text};
 });

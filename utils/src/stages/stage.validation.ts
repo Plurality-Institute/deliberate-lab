@@ -44,7 +44,6 @@ export const StageGameSchema = Type.Union([
   Type.Literal(StageGame.RTV),
   Type.Literal(StageGame.CHP),
   Type.Literal(StageGame.CTS),
-  Type.Literal(StageGame.TG),
   Type.Literal(StageGame.BBOT),
 ]);
 

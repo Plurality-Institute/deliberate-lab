@@ -55,6 +55,9 @@ export const createParticipant = onCall(async (request) => {
     prolificId: data.prolificId,
   });
 
+  // Temporarily always mark participants as connected (PR #537)
+  participantConfig.connected = true; // TODO: Remove this line
+
   // If agent config is specified, add to participant config
   if (data.agentConfig) {
     participantConfig.agentConfig = data.agentConfig;
@@ -292,7 +295,7 @@ export const updateParticipantToNextStage = onCall(async (request) => {
     .collection('participants')
     .doc(privateId);
 
-  let response: { currentStageId: string | null; endExperiment: boolean } = {
+  let response: {currentStageId: string | null; endExperiment: boolean} = {
     currentStageId: null,
     endExperiment: false,
   };
@@ -446,10 +449,10 @@ export const acceptParticipantTransfer = onCall(async (request) => {
     .collection('experiments')
     .doc(data.experimentId);
 
-    let response: { currentStageId: string | null; endExperiment: boolean } = {
-      currentStageId: null,
-      endExperiment: false,
-    };
+  let response: {currentStageId: string | null; endExperiment: boolean} = {
+    currentStageId: null,
+    endExperiment: false,
+  };
 
   // Run document write as transaction to ensure consistency
   await app.firestore().runTransaction(async (transaction) => {
