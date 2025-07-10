@@ -1,5 +1,5 @@
-@use "../../sass/common";
-@use "../../sass/typescale";
+@use '../../sass/common';
+@use '../../sass/typescale';
 
 :host {
   @include common.flex-column;
@@ -11,7 +11,7 @@
 .html-wrapper {
   @include common.flex-column;
   @include typescale.body-medium;
-  
+
   gap: common.$spacing-xl;
   padding: common.$main-content-padding;
 }
@@ -20,6 +20,18 @@
   @include common.flex-column;
   gap: common.$spacing-large;
   max-width: common.$info-content-max-width;
+}
+
+ul,
+ol {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-left: 1.5em;
+}
+
+li {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
 }
 
 .ack-wrapper {
@@ -51,4 +63,12 @@
 
 .divider {
   border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+:host h1 {
+  margin-top: 0.5em;
+}
+
+:host blockquote {
+  margin: 0 0 0 2em;
 }

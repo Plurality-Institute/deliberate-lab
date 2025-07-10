@@ -243,7 +243,7 @@ export class StageBuilderDialog extends MobxLitElement {
 
     return html`
       <div class="card" @click=${addGame}>
-        <div class="title">🪙 ${BBOT_METADATA.name}</div>
+        <div class="title">${BBOT_METADATA.publicName}</div>
         <div>${BBOT_METADATA.description}</div>
       </div>
     `;

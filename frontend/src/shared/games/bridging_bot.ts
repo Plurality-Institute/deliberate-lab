@@ -40,6 +40,8 @@ export const BBOT_METADATA = createMetadataConfig({
 
 export const BBOT_CHAT_STAGE_ID = 'bbot_chat';
 
+const SKIP_INITIAL_SURVEY = true; // Skip the initial survey for control data collection
+
 export function getBbotStageConfigs(): StageConfig[] {
   const stages: StageConfig[] = [];
 
@@ -51,7 +53,11 @@ export function getBbotStageConfigs(): StageConfig[] {
 
   // Pre-intervention surveys
   stages.push(BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_PRE);
-  stages.push(BBOT_DEMOCRATIC_RECIPROCITY_SURVEY_STAGE_PRE);
+
+  if (!SKIP_INITIAL_SURVEY) {
+    stages.push(BBOT_DEMOCRATIC_RECIPROCITY_SURVEY_STAGE_PRE);
+    stages.push(BBOT_FEELING_THERMOMETER_SURVEY_STAGE_PRE);
+  }
 
   // Make sure users go into Lobby cohort
   // Transfer
@@ -66,8 +72,9 @@ export function getBbotStageConfigs(): StageConfig[] {
   stages.push(BBOT_CONVERSATION_QUALITY_SURVEY_STAGE);
   stages.push(BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_POST);
   stages.push(BBOT_DEMOCRATIC_RECIPROCITY_SURVEY_STAGE_POST);
+  stages.push(BBOT_FEELING_THERMOMETER_SURVEY_STAGE_POST);
   stages.push(BBOT_DEMOGRAPHIC_SURVEY_STAGE);
-  stages.push(BBOT_FEEDBACK_SURVEY_STAGE);
+  // stages.push(BBOT_FEEDBACK_SURVEY_STAGE);
   stages.push(BBOT_DEBRIEF_STAGE);
 
   return stages;
@@ -84,7 +91,7 @@ const AGREE_LIKERT_SCALE: Partial<ScaleSurveyQuestion> = {
   lowerText: 'Strongly disagree',
 };
 
-const BBOT_AGENT_PROMPT = `You are Bridging Bot, an AI-powered tool that can automatically intervene in polarized online conversations. Your goal is to act as a thoughtful conflict mediator and to promote *productive* disagreement, helping users to find common ground and build mutual understanding, without trying to eliminate disagreement.
+const BBOT_AGENT_PROMPT = `You are Bridging Bot, an AI-powered tool that can automatically inteMOROvene in polarized online conversations. Your goal is to act as a thoughtful conflict mediator and to promote *productive* disagreement, helping users to find common ground and build mutual understanding, without trying to eliminate disagreement.
 
 You are currently in a conversation with two participants who are discussing abortion rights. You are being asked to decide whether and how you would like to send a message response in the chat conversation.
 
@@ -138,42 +145,99 @@ You must do all of the following:
 - Do not be prescriptive in proposing a way forward.
 `;
 
-const BBOT_CONSENT = `**You must read and agree to these terms to participate in the study.**
+const BBOT_CONSENT = `# Consent to Participate in Research Study
 
-**Researchers:** Jeffrey Fossett: Harvard University, Ian Baker: UC Berkeley
-**Sponsors/Supporters:** Plurality Institute, Jigsaw
+**TITLE:**
+> Large Language Models for Bridging and De-escalation in Online Conversations: DeliberateLab Study
 
-We are a team of researchers investigating ways to improve the quality of online discussions. You are being invited to participate in a technical pilot to improve the design of a research project that will be conducted in the future. Results from this pilot will not be published.
+**PROTOCOL NO.:**
+> NA
+> WCG IRB Protocol # 20251814
 
-If you agree to participate, you will be asked to have a text-based conversation about abortion and reproductive rights with another research participant who disagrees with you on this issue. An AI bot will also be present in the chat, and may interject in the conversation from time to time. Researchers will be able to see the content of your messages, but they will never be shared outside of the research team.
+**SPONSOR:**
+> Plurality Institute
 
-If you proceed, you will be asked to complete a survey, followed by a chat conversation, and then an additional survey. You will be paid at the rate specified on Prolific when you have completed the second survey.
+**INVESTIGATOR:**
+> Jeffrey Fossett, BA, AM
+> 10 Agassiz Street
+> Apartment 32
+> Cambridge, Massachusetts 02140
+> United States
 
-This study will take approximately 30 minutes to complete. With your permission, we may contact you for a further paid followup study opportunity. Participation in that study is optional, and your payment for this study is not contingent on your agreement to participate in future research.
+**STUDY-RELATED PHONE NUMBER(S):**
+> 518-852-0896 (24 hours)
+
+Your participation in this study is voluntary. You may decide not to participate or you may leave the study at any time. Your decision will not result in any penalty or loss of benefits to which you are otherwise entitled.
+
+If you have questions, concerns, or complaints, or think this research has hurt you, talk to the research team at the phone number(s) listed in this document.
+
+_You must read and agree to these terms to participate in the study._
+
+**Researchers:**
+
+- Jeffrey Fossett: Plurality Institute
+- Ian Baker: UC Berkeley & Plurality Institute
+
+**Sponsor:** Plurality Institute
+
+# About this Research
+
+We are a team of researchers studying online conversations.
+If you agree to participate in this research study, you will be asked to do the following:
+
+- Complete a short survey about your beliefs on reproductive rights.
+- Engage in a 10-minute, text-only chat with another research participant who may disagree with you about this issue.
+- Complete a short follow up survey.
+
+A chat moderator—which could be automated—may post a message during your conversation.
+In total, the study will take approximately **22 minutes to complete.**
+
+# Compensation
+
+If you finish both surveys and the chat, you will receive the amount shown in Prolific ($5.50). If you leave the study early, you will not be compensated.
 
 A single individual may not participate in this study more than once. You will be ineligible for payment if we detect that you attempted to participate a second time.
 
-**Risks and Benefits**
+# Possible Risks and Benefits
 
-A risk of taking part in this study is the possibility of a loss of confidentiality or privacy. Loss of privacy means having your personal information shared with someone who is not on the study team and was not supposed to see or know about your information. The study team plans to protect your privacy. Their plans for keeping your information private are described in the Confidentiality section.
+Participation in this study involves several possible risks:
 
-You may or may not receive personal (direct) benefit from taking part in this study. The possible benefits of taking part in this study include an opportunity to debate or learn new information about an issue that may be important to you.
+- **Loss of confidentiality.** A risk of taking part in this study is the possibility of a loss of confidentiality or privacy. This means having your personal information shared with someone who is not on the study team and was not supposed to see or know about your information. The study team plans to protect your privacy. Their plans for keeping your information private are described in the Confidentiality section below.
+- **Emotional discomfort.** Discussing abortion can be upsetting. You may leave the study at any time by closing your browser window. You can also dial 988 to contact the Suicide & Crisis Lifeline if you feel distressed.
 
-**Privacy and Confidentiality**
+You may or may not receive direct benefit from taking part in this study. A possible benefit of taking part in this study is the opportunity to discuss and learn about new perspectives on an issue that may be important to you. Your alternative is to not participate.
 
-Your privacy and confidentiality of your responses are of paramount importance both to us and to our universities. We do not collect information about your identity, and we cannot re-contact you except through the Prolific platform. Your conversation transcripts and survey answers will never be shared outside the research team. Please contact us if you have any doubts or concerns.
+# Privacy and Confidentiality
 
-The researchers listed above will be able to look at, copy, use, and share your research information.
+The researchers listed above including the sponsor will be able to see and analyze the content of your messages, as well as your survey responses. This information will never be shared outside of the research team, except in anonymized, aggregate form in academic publications. The Institutional Review Board (IRB) that reviewed this research may also have access to the data collected.
 
-**Participant's Rights**
+Your privacy and confidentiality of your responses are of paramount importance to us. We do not collect information about your identity, and we cannot re-contact you except through the Prolific platform.
 
-Participation is voluntary. Refusal to participate or withdrawing from the research will involve no penalty or loss of benefits to which you might otherwise be entitled.
+# Participant's Rights
 
-**Contact Details**
+Participation is voluntary. You are free to withdraw from the study at any time by closing your browser window.
+You may request that your data be deleted at any time before publication.
+You will be shown a short debrief after the study explaining the research conditions and purpose of the study.
 
-If you have any questions, doubts, or would like us to remove your data from our database, please contact Jeffrey Fossett at jeff@plurality.institute.
+# Contact Details
 
-By selecting “I accept the terms of service” below, you certify that you are at least 18 years old and a resident of the United States, and that you agree to participate in this research study.`;
+This research is being overseen by WCG IRB. An IRB is a group of people who perform independent review of research studies. You may talk to them at 855-818-2289 or <clientcare@wcgclinical.com> if:
+
+- You have questions, concerns, or complaints that are not being answered by the research team.
+- You are not getting answers from the research team.
+- You cannot reach the research team.
+- You want to talk to someone else about the research.
+- You have questions about your rights as a research subject.
+
+If you have any questions or concerns, or would like us to remove your data from our database, please contact Jeffrey Fossett at <jeff@plurality.institute>.
+
+Please protect your privacy. If you agree to participate, please do not share anything that could identify you personally (e.g., real name, email, phone number, social‑media handle) in the chat or surveys.
+
+By selecting “I agree to participate” below, you certify that:
+
+- You are at least 18 years old and a resident of the United States
+- You have read and understood the information above.
+- You voluntarily agree to take part in this research study.`;
 
 const BBOT_TOS_STAGE = createTOSStage({
   id: 'tos',
@@ -182,9 +246,16 @@ const BBOT_TOS_STAGE = createTOSStage({
   tosLines: BBOT_CONSENT.split('\n'),
 });
 
-const BBOT_DEBRIEF_TEXT = `**Debriefing Statement**
+const BBOT_DEBRIEF_TEXT = `**The study is now complete. Thank you for participating.**
 
-Thank you for participating in this study. We want to let you know that some elements of the study involved intentional deception. Specifically, you were told that your chat transcript would be shown to future participants who would evaluate your conversation. In reality, this step will not take place. This was included solely to help create the feeling of a public or evaluative context, which we believe better simulates how people behave in online conversations. The true purpose of the study is to explore how large language models can help mediate disagreements between people. Your participation helps us develop new approaches for fostering more constructive dialogue in online spaces. If you have any concerns, please don't hesitate to contact us. You can message us on Prolific or email Jeffrey Fossett at jeff@plurality.institute.`;
+Abortion rights is an important policy issue. Here are some links to additional resources if you would like to learn more about different perspectives on this topic (links open in a new browser tab):
+
+- Pro-choice perspectives: [Center for Reproductive Rights resources & research](https://chatstudy.short.gy/center-for-reproductive-rights-research)
+- Pro-life perspectives: [National Right to Life fact sheet](https://chatstudy.short.gy/national-right-to-life)
+
+During your chat you were randomly assigned to a condition that involved either (a) no moderator message, (b) a standard pre-written message, or (c) a message written by an AI moderation system we are testing. The system is designed to help support constructive disagreement in online conversations. The goal of our study is to understand whether this form of moderation can improve the quality of text-based online conversations.
+
+We withheld this detail at the start so it would not influence how you spoke with your partner or responded to our surveys; the IRB approved this temporary omission because the study posed no more than minimal risk. If you have concerns, would like your data removed, or want more information, email <jeff@plurality.institute>.`;
 
 const BBOT_DEBRIEF_STAGE = createInfoStage({
   id: 'debrief',
@@ -208,186 +279,81 @@ const BBOT_DEMOGRAPHIC_SURVEY_STAGE = createSurveyStage({
   name: 'Demographic info',
   game: StageGame.BBOT,
   questions: [
-    createTextSurveyQuestion({
-      questionTitle:
-        'In which US state do you currently reside? (Please enter the two-letter state code, eg. NY or FL)',
+    createMultipleChoiceSurveyQuestion({
+      questionTitle: 'Are you currently able to become pregnant?',
+      options: createMultipleChoiceItems(['Yes', 'No', 'Prefer not to answer']),
     }),
 
     createMultipleChoiceSurveyQuestion({
       questionTitle:
-        'Which of the following best describes your religious preference?',
+        'What is the highest level of education you have completed?',
       options: createMultipleChoiceItems([
-        'Buddhist',
-        'Christian (Protestant)',
-        'Christian (Catholic)',
-        'Hindu',
-        'Jewish',
-        'Muslim',
-        'Spiritual but not religious',
-        'Atheist or Agnostic',
-        'Another religious or belief system',
+        'Less than high school',
+        'High school diploma or GED',
+        'Some college / Associate degree',
+        "Bachelor's degree",
+        'Graduate or professional degree',
         'Prefer not to answer',
       ]),
     }),
 
-    // Questions can't be optional, so we're going to skip the write-in answers for now.
-    // createTextSurveyQuestion({
-    //   questionTitle:
-    //     'If you indicated "Another religious or belief system" above, please specify.',
-    // }),
-
     createMultipleChoiceSurveyQuestion({
       questionTitle:
-        'Which of the following best describes your political affiliation?',
+        'Which of the following political parties do your views most align with?',
       options: createMultipleChoiceItems([
         'Democrat',
         'Republican',
         'Independent',
-        'Libertarian',
-        'Green Party',
-        'Other',
-        'I do not identify with a political party',
-        'Prefer not to answer',
-      ]),
-    }),
-
-    // createTextSurveyQuestion({
-    //   questionTitle: 'If you indicated "Other" above, please specify.',
-    // }),
-
-    createMultipleChoiceSurveyQuestion({
-      questionTitle:
-        'Which category best describes your total annual household income before taxes?',
-      options: createMultipleChoiceItems([
-        'Less than $25,000',
-        '$25,000 - $49,999',
-        '$50,000 - $74,999',
-        '$75,000 - $99,999',
-        '$100,000 - $149,999',
-        '$150,000 - $199,999',
-        '$200,000 or more',
+        'Something else',
         'Prefer not to answer',
       ]),
     }),
 
     createMultipleChoiceSurveyQuestion({
-      questionTitle: 'What is your age?',
+      questionTitle: 'What is your present religion, if any?',
       options: createMultipleChoiceItems([
-        'Under 18',
-        '18-24',
-        '25-34',
-        '35-44',
-        '45-54',
-        '55-64',
-        '65 or older',
+        'Christianity (any tradition)',
+        'Judaism',
+        'Islam',
+        'Buddhism',
+        'Hinduism',
+        'Atheist / Agnostic / No religion in particular',
+        'Other religion or spiritual tradition',
         'Prefer not to answer',
       ]),
     }),
 
     createMultipleChoiceSurveyQuestion({
       questionTitle:
-        'Which of the following best describes your gender identity?',
-      options: createMultipleChoiceItems([
-        'Female',
-        'Male',
-        'Non-binary',
-        'Genderqueer/genderfluid',
-        'Another gender identity',
-        'Prefer not to answer',
-      ]),
+        'Would you like to be involved in future studies that involve conversations with people who disagree with you about abortion rights?',
+      options: createMultipleChoiceItems(['Yes', 'No']),
     }),
-
-    // createTextSurveyQuestion({
-    //   questionTitle:
-    //     'If you indicated "Another gender identity" above, please specify.',
-    // }),
   ],
 });
 
-const pastActionQuestions: SurveyQuestion[] = [
-  createCheckSurveyQuestion({
-    questionTitle:
-      'I have donated to an abortion rights or anti-abortion organization',
-  }),
-  createCheckSurveyQuestion({
-    questionTitle:
-      'I have attended a protest or rally related to abortion policy',
-  }),
-  createCheckSurveyQuestion({
-    questionTitle: 'I have contacted an elected official about abortion policy',
-  }),
-  createCheckSurveyQuestion({
-    questionTitle:
-      'I have discussed abortion rights extensively with friends or family',
-  }),
-  createCheckSurveyQuestion({
-    questionTitle:
-      'I have made a decision about whether to vote for a political candidate due to their beliefs on abortion',
-  }),
-];
+// This is the question we use to match participants who disagree.
+const SORTING_HAT_QUESTION = createMultipleChoiceSurveyQuestion({
+  id: 'abortion_policy_preference',
+  questionTitle: 'Do you think that abortion should be...',
+  options: [
+    createMultipleChoiceItem({id: 'legal', text: 'Legal in most or all cases'}),
+    createMultipleChoiceItem({
+      id: 'illegal',
+      text: 'Illegal in most or all cases',
+    }),
+  ],
+});
 
-const beliefQuestions: SurveyQuestion[] = [
-  createMultipleChoiceSurveyQuestion({
-    questionTitle: 'Do you consider yourself to be...',
-    options: createMultipleChoiceItems([
-      'Pro-life',
-      'Pro-choice',
-      'Neither or unsure',
-    ]),
-  }),
-
-  createMultipleChoiceSurveyQuestion({
-    questionTitle: 'Do you think that abortion should be...',
-    options: createMultipleChoiceItems([
-      'Legal in all cases',
-      'Legal in most cases',
-      'Illegal in most cases',
-      'Illegal in all cases',
-    ]),
-  }),
+const BELIEF_QUESTIONS: SurveyQuestion[] = [
+  SORTING_HAT_QUESTION,
 
   createMultipleChoiceSurveyQuestion({
     questionTitle:
-      'Thinking about the area where you live, how easy or difficult do you think it would be for someone to obtain an abortion near you?',
+      'Thinking about the area where you live, do you think that obtaining an abortion should be...',
     options: createMultipleChoiceItems([
-      'Very difficult',
-      'Somewhat difficult',
-      'Somewhat easy',
-      'Very easy',
-    ]),
-  }),
-
-  createMultipleChoiceSurveyQuestion({
-    questionTitle:
-      'Still thinking about the area where you live, do you think that obtaining an abortion should be...',
-    options: createMultipleChoiceItems([
-      'Harder than it is now ',
-      'Easier than it is now ',
+      'Harder than it is now',
       'About the same difficulty as it is now',
-    ]),
-  }),
-
-  createMultipleChoiceSurveyQuestion({
-    questionTitle:
-      'Regardless of whether you think abortion should be legal or illegal, how well does this statement describe your views? "The decision about whether to have an abortion should belong solely to the pregnant woman."',
-    options: createMultipleChoiceItems([
-      'Extremely well',
-      'Very well',
-      'Somewhat well',
-      'Not too well',
-      'Not at all well',
-    ]),
-  }),
-
-  createMultipleChoiceSurveyQuestion({
-    questionTitle:
-      'Regardless of whether you think abortion should be legal or illegal, how well does this statement describe your views? "Human life begins at conception, so a fetus is a person with rights."',
-    options: createMultipleChoiceItems([
-      'Extremely well',
-      'Very well',
-      'Somewhat well',
-      'Not too well',
-      'Not at all well',
+      'Easier than it is now',
     ]),
   }),
 
@@ -408,6 +374,7 @@ const beliefQuestions: SurveyQuestion[] = [
     options: createMultipleChoiceItems([
       'Very strongly',
       'Somewhat strongly',
+      'Not very strongly',
       'Not at all strongly',
     ]),
   }),
@@ -424,25 +391,37 @@ const beliefQuestions: SurveyQuestion[] = [
   }),
 ];
 
-const BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_PRE = createSurveyStage({
-  id: 'reproductive_rights_survey_pre',
-  name: 'Beliefs about abortion',
-  game: StageGame.BBOT,
-  questions: [...beliefQuestions, ...pastActionQuestions],
-});
+let BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_PRE: SurveyStageConfig;
+
+if (SKIP_INITIAL_SURVEY) {
+  // If we are skipping the initial survey, ask only the sorting hat question.
+  BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_PRE = createSurveyStage({
+    id: 'reproductive_rights_survey_pre',
+    name: 'Beliefs about abortion',
+    game: StageGame.BBOT,
+    questions: [SORTING_HAT_QUESTION],
+  });
+} else {
+  BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_PRE = createSurveyStage({
+    id: 'reproductive_rights_survey_pre',
+    name: 'Beliefs about abortion',
+    game: StageGame.BBOT,
+    questions: BELIEF_QUESTIONS,
+  });
+}
 
 const BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_POST = createSurveyStage({
   id: 'reproductive_rights_survey_post',
   name: 'Beliefs about abortion',
   descriptions: createStageTextConfig({
-    primaryText: 'These questions are repeated intentionally',
+    primaryText: 'Some of these questions are repeated intentionally',
   }),
   game: StageGame.BBOT,
-  questions: beliefQuestions,
+  questions: BELIEF_QUESTIONS,
 });
 
 // we use this twice
-const democraticResiprocitySurveyConfig: Partial<SurveyStageConfig> = {
+const DEMOCRATIC_RECIPROCITY_SURVEY_CONFIG: Partial<SurveyStageConfig> = {
   name: "Beliefs about abortion (cont'd)",
   descriptions: createStageTextConfig({
     primaryText: 'Indicate how much you agree or disagree with each statement.',
@@ -476,14 +455,47 @@ const democraticResiprocitySurveyConfig: Partial<SurveyStageConfig> = {
 };
 const BBOT_DEMOCRATIC_RECIPROCITY_SURVEY_STAGE_PRE = createSurveyStage({
   id: 'democratic_reciprocity_survey_pre',
-  ...democraticResiprocitySurveyConfig,
+  ...DEMOCRATIC_RECIPROCITY_SURVEY_CONFIG,
 });
 const BBOT_DEMOCRATIC_RECIPROCITY_SURVEY_STAGE_POST = createSurveyStage({
   id: 'democratic_reciprocity_survey_post',
+  ...DEMOCRATIC_RECIPROCITY_SURVEY_CONFIG,
+});
+
+const FEELING_THERMOMETER_SURVEY_CONFIG: Partial<SurveyStageConfig> = {
+  name: 'Feelings about others',
   descriptions: createStageTextConfig({
-    primaryText: 'These questions are repeated intentionally',
+    primaryText:
+      'Imagine a thermometer that ranges from 0 to 10, where 0 means you feel extremely cold, negative, or hostile, and 10 means you feel extremely warm, positive, or friendly.',
   }),
-  ...democraticResiprocitySurveyConfig,
+  game: StageGame.BBOT,
+  questions: [
+    createScaleSurveyQuestion({
+      questionTitle:
+        'First, think about people who are have the same/similar beliefs as you when it comes to abortion rights. Using this thermometer, what number best describes your overall feelings toward these individuals?',
+      upperValue: 10,
+      upperText: 'Warm, positive, or friendly',
+      lowerValue: 0,
+      lowerText: 'Cold, negative, or hostile',
+    }),
+    createScaleSurveyQuestion({
+      questionTitle:
+        'Next, think about people who have opposite/different beliefs from you when it comes to abortion rights. Using this thermometer, what number best describes your overall feelings toward these individuals?',
+      upperValue: 10,
+      upperText: 'Warm, positive, or friendly',
+      lowerValue: 0,
+      lowerText: 'Cold, negative, or hostile',
+    }),
+  ],
+};
+
+const BBOT_FEELING_THERMOMETER_SURVEY_STAGE_PRE = createSurveyStage({
+  id: 'feeling_thermometer_survey_pre',
+  ...FEELING_THERMOMETER_SURVEY_CONFIG,
+});
+const BBOT_FEELING_THERMOMETER_SURVEY_STAGE_POST = createSurveyStage({
+  id: 'feeling_thermometer_survey_post',
+  ...FEELING_THERMOMETER_SURVEY_CONFIG,
 });
 
 const BBOT_CONVERSATION_QUALITY_SURVEY_STAGE = createSurveyStage({
@@ -496,11 +508,12 @@ const BBOT_CONVERSATION_QUALITY_SURVEY_STAGE = createSurveyStage({
   game: StageGame.BBOT,
   questions: [
     createScaleSurveyQuestion({
-      questionTitle: 'How would you grade the quality of the conversation?',
+      questionTitle:
+        'On a scale from 0-10, please rate the extent to which you and your partner agreed about the issue of abortion rights in the preceding conversation.',
       upperValue: 10,
-      upperText: 'High quality',
-      lowerValue: 1,
-      lowerText: 'Low quality',
+      upperText: 'High ageeement',
+      lowerValue: 0,
+      lowerText: 'Low agreement',
     }),
 
     createScaleSurveyQuestion({
@@ -523,15 +536,29 @@ const BBOT_CONVERSATION_QUALITY_SURVEY_STAGE = createSurveyStage({
         'I was able to communicate my values and beliefs to my partner.',
       ...AGREE_LIKERT_SCALE,
     }),
-
-    createCheckSurveyQuestion({
-      questionTitle: 'I would talk to this person again.',
+    createScaleSurveyQuestion({
+      questionTitle: "I was able to understand my partner's values and beliefs",
+      ...AGREE_LIKERT_SCALE,
     }),
 
-    createCheckSurveyQuestion({
-      questionTitle:
-        'I would like receive further information about opposing viewpoints.',
+    createMultipleChoiceSurveyQuestion({
+      questionTitle: 'Please answer “Somewhat unlikely” to this question.',
+      options: createMultipleChoiceItems([
+        'Very likely',
+        'Somewhat likely',
+        'Somewhat unlikely',
+        'Very unlikely',
+      ]),
     }),
+
+    // createCheckSurveyQuestion({
+    //   questionTitle: 'I would talk to this person again.',
+    // }),
+
+    // createCheckSurveyQuestion({
+    //   questionTitle:
+    //     'I would like receive further information about opposing viewpoints.',
+    // }),
   ],
 });
 
@@ -571,12 +598,17 @@ const BBOT_TRANSFER_STAGE = createTransferStage({
   game: StageGame.BBOT,
   enableTimeout: false,
   descriptions: createStageTextConfig({primaryText: BBOT_TRANSFER_TEXT}),
+  enableSurveyMatching: true,
+  surveyStageId: 'reproductive_rights_survey_pre',
+  surveyQuestionId: 'abortion_policy_preference',
+  participantCounts: {illegal: 1, legal: 1},
 });
 
-const BBOT_CHAT_INTRO_TEXT = `On the next screen, you will have a conversation with another participant. To get started, explain your position on abortion policy. What should the law be, and why?
+const BBOT_CHAT_INTRO_TEXT = `In the next stage, you will have a chat conversation about abortion policy with another participant who may see the issue differently.
 
-Your anonymous chat transcript will be shown to other participants in a later phase of the experiment, where they will be asked to share their opinions about what you have said.
-`;
+The chat is anonymous and will last 10 minutes.
+
+**In your first message, please share a brief statement of your view on abortion policy (1-2 sentences is plenty). What, if anything, should the law allow or restrict, and why?**`;
 
 const BBOT_CHAT_INTRO_STAGE = createInfoStage({
   id: 'chat_intro',
@@ -584,14 +616,20 @@ const BBOT_CHAT_INTRO_STAGE = createInfoStage({
   infoLines: BBOT_CHAT_INTRO_TEXT.split('\n'),
 });
 
+const CHAT_DESCRIPTION = `You are now in a chat conversation with another participant.
+
+To start the conversation, please share a brief statement of your view on abortion policy (1-2 sentences). What, if anything, should the law allow or restrict, and why?
+
+After sending your first message, please read your partner's messages and continue the discussion.`;
+
 const BBOT_CHAT_STAGE = createChatStage({
   game: StageGame.BBOT,
   id: BBOT_CHAT_STAGE_ID,
   name: 'Group discussion',
   timeLimitInMinutes: 10,
+  requireFullTime: true,
   descriptions: {
-    primaryText:
-      'In this discussion, you will have a conversation with one other participant. To get started, explain your position on abortion policy. What should the law be, and why? Your conversation will be shown to other participants in a later phase of the experiment, where they will be asked to share their opinions about what you have said. A facilitator bot may sometimes chime in as well.',
+    primaryText: CHAT_DESCRIPTION,
     infoText: '',
     helpText: '',
   },

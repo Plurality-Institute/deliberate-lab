@@ -7,10 +7,6 @@ import {
 } from '@deliberation-lab/utils';
 import {getAgentPersonas} from './agent.utils';
 
-import * as admin from 'firebase-admin';
-import * as functions from 'firebase-functions';
-import {onCall} from 'firebase-functions/v2/https';
-
 import {app} from './app';
 
 /** Create mediators for all agent personas with isDefaultAddToCohort true. */

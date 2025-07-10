@@ -19,10 +19,7 @@ import {
   structuredOutputEnabled,
 } from '@deliberation-lab/utils';
 
-import * as admin from 'firebase-admin';
-import * as functions from 'firebase-functions';
 import {Timestamp} from 'firebase-admin/firestore';
-import {onCall} from 'firebase-functions/v2/https';
 
 import {ModelResponseStatus} from '../api/model.response';
 import {app} from '../app';

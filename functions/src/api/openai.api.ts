@@ -171,7 +171,10 @@ export async function callOpenAIChatCompletion(
       text: response.choices[0].message.content,
       errorMessage: `Token limit (${generationConfig.maxOutputTokens}) exceeded`,
     };
-  } else if (finishReason === REFUSAL_FINISH_REASON || response.choices[0].message.refusal) {
+  } else if (
+    finishReason === REFUSAL_FINISH_REASON ||
+    response.choices[0].message.refusal
+  ) {
     return {
       status: ModelResponseStatus.REFUSAL_ERROR,
       errorMessage: `Refusal from provider: ${response.choices[0].message.refusal}`,
@@ -181,7 +184,7 @@ export async function callOpenAIChatCompletion(
       status: ModelResponseStatus.UNKNOWN_ERROR,
       text: response.choices[0].message.content,
       errorMessage: `Provider sent unrecognized finish_reason: ${finishReason}`,
-    }
+    };
   }
 
   return {

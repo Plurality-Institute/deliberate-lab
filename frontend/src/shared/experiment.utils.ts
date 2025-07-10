@@ -58,7 +58,7 @@ export function getPublicExperimentName(
   defaultValue = 'Experiment',
 ) {
   if (!experiment) return defaultValue;
-  return experiment.metadata.publicName.length > 0
+  return experiment.metadata?.publicName.length > 0
     ? experiment.metadata.publicName
     : defaultValue;
 }
