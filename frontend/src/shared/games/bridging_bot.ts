@@ -29,6 +29,7 @@ import {
   StageKind,
   SurveyQuestion,
   SurveyStageConfig,
+  AgentPersonaType,
 } from '@deliberation-lab/utils';
 
 export const BBOT_METADATA = createMetadataConfig({
@@ -619,6 +620,7 @@ const createBbotAgent = () => {
   chatPromptMap[BBOT_CHAT_STAGE_ID] = createAgentChatPromptConfig(
     BBOT_CHAT_STAGE_ID, // stage ID
     StageKind.CHAT, // stage kind,
+    AgentPersonaType.MEDIATOR,
     {
       promptContext: BBOT_AGENT_PROMPT,
       promptSettings: createAgentPromptSettings({
