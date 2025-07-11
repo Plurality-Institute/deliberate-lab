@@ -15,7 +15,7 @@ import {
 import {completeStageAsAgentParticipant} from './agent.utils';
 import {getFirestoreActiveParticipants} from './utils/firestore';
 import {generateId} from '@deliberation-lab/utils';
-import { createCohortInternal } from './cohort.utils';
+import {createCohortInternal} from './cohort.utils';
 
 import {app} from './app';
 
@@ -25,7 +25,10 @@ export async function updateParticipantNextStage(
   participant: ParticipantProfileExtended,
   stageIds: string[],
 ) {
-  const response = {currentStageId: null as (string | null), endExperiment: false};
+  const response = {
+    currentStageId: null as string | null,
+    endExperiment: false,
+  };
 
   const currentStageId = participant.currentStageId;
   const currentStageIndex = stageIds.indexOf(currentStageId);
@@ -183,7 +186,7 @@ export async function handleAutomaticTransfer(
   experimentId: string,
   stageConfig: TransferStageConfig,
   participant: ParticipantProfileExtended,
-): Promise<{ currentStageId: string; endExperiment: boolean } | null> {
+): Promise<{currentStageId: string; endExperiment: boolean} | null> {
   const firestore = app.firestore();
 
   // Do a read to lock the current participant's document for this transaction
@@ -205,7 +208,7 @@ export async function handleAutomaticTransfer(
         .where('currentStageId', '==', stageConfig.id)
         .where('currentStatus', '==', ParticipantStatus.IN_PROGRESS)
         .where('currentCohortId', '==', participant.currentCohortId)
-        .where('transferCohortId', '==', null)
+        .where('transferCohortId', '==', null),
     )
   ).docs.map((doc) => doc.data() as ParticipantProfileExtended);
 
@@ -216,9 +219,7 @@ export async function handleAutomaticTransfer(
   }
 
   // Filter connected participants
-  const connectedParticipants = waitingParticipants.filter(
-    (p) => p.connected,
-  );
+  const connectedParticipants = waitingParticipants.filter((p) => p.connected);
 
   console.log(
     `Connected participants for transfer stage ${stageConfig.id}: ${connectedParticipants
@@ -235,9 +236,9 @@ export async function handleAutomaticTransfer(
     .collection('publicStageData')
     .doc(stageConfig.surveyStageId!);
 
-  const surveyStageData = (
-    await transaction.get(surveyStageDoc)
-  ).data() as SurveyStagePublicData | undefined;
+  const surveyStageData = (await transaction.get(surveyStageDoc)).data() as
+    | SurveyStagePublicData
+    | undefined;
 
   if (!surveyStageData) {
     throw new Error('Survey stage data not found');
@@ -249,21 +250,28 @@ export async function handleAutomaticTransfer(
   // Group participants by survey answers
   const answerGroups: Record<string, ParticipantProfileExtended[]> = {};
   for (const connectedParticipant of connectedParticipants) {
-    const surveyAnswers = surveyStageData.participantAnswerMap[connectedParticipant.publicId];
+    const surveyAnswers =
+      surveyStageData.participantAnswerMap[connectedParticipant.publicId];
     if (!surveyAnswers) {
-      console.log(`Participant ${connectedParticipant.publicId} has no survey answers`);
+      console.log(
+        `Participant ${connectedParticipant.publicId} has no survey answers`,
+      );
       continue;
     }
 
     const surveyAnswer = surveyAnswers[stageConfig.surveyQuestionId!];
     if (!surveyAnswer) {
-      console.log(`Participant ${connectedParticipant.publicId} has no survey answer matching ${stageConfig.surveyQuestionId}`);
+      console.log(
+        `Participant ${connectedParticipant.publicId} has no survey answer matching ${stageConfig.surveyQuestionId}`,
+      );
       continue;
     }
 
     // Only support multiple-choice questions for now
     if (surveyAnswer.kind !== SurveyQuestionKind.MULTIPLE_CHOICE) {
-      throw new Error(`Selected survey answer is not of kind ${SurveyQuestionKind.MULTIPLE_CHOICE}`);
+      throw new Error(
+        `Selected survey answer is not of kind ${SurveyQuestionKind.MULTIPLE_CHOICE}`,
+      );
     }
 
     const key = surveyAnswer.choiceId;
@@ -271,7 +279,9 @@ export async function handleAutomaticTransfer(
       answerGroups[key] = [];
     }
     answerGroups[key].push(connectedParticipant);
-    console.log(`Participant ${connectedParticipant.publicId} has answer ${key}`);
+    console.log(
+      `Participant ${connectedParticipant.publicId} has answer ${key}`,
+    );
   }
 
   // Check if a cohort can be formed
@@ -282,14 +292,21 @@ export async function handleAutomaticTransfer(
 
     // Sort by waiting time (oldest first)
     matchingParticipants = matchingParticipants.sort((a, b) => {
-      const aTime = a.timestamps.readyStages?.[stageConfig.id]?.toMillis?.() ?? 0;
-      const bTime = b.timestamps.readyStages?.[stageConfig.id]?.toMillis?.() ?? 0;
+      const aTime =
+        a.timestamps.readyStages?.[stageConfig.id]?.toMillis?.() ?? 0;
+      const bTime =
+        b.timestamps.readyStages?.[stageConfig.id]?.toMillis?.() ?? 0;
       return aTime - bTime;
     });
 
     // Move the current participant to the front if present
-    matchingParticipants = matchingParticipants.filter(p => p.privateId === participant.privateId)
-      .concat(matchingParticipants.filter(p => p.privateId !== participant.privateId));
+    matchingParticipants = matchingParticipants
+      .filter((p) => p.privateId === participant.privateId)
+      .concat(
+        matchingParticipants.filter(
+          (p) => p.privateId !== participant.privateId,
+        ),
+      );
 
     // If not enough participants to form a cohort, return null
     if (matchingParticipants.length < requiredCount) {
@@ -302,16 +319,51 @@ export async function handleAutomaticTransfer(
     cohortParticipants.push(...matchingParticipants.slice(0, requiredCount));
   }
 
-  // nb: for transaction purposes, writes begin here and there can be no more reads.
+  // Select group if groupProbabilities is provided
+  let selectedGroup: string | undefined = undefined;
+  if (stageConfig.groupProbabilities) {
+    const groupProbabilities = stageConfig.groupProbabilities;
+    const groups = Object.keys(groupProbabilities);
+    const probs = Object.values(groupProbabilities);
+    const sum = probs.reduce((a, b) => a + b, 0);
+    if (Math.abs(sum - 1) > 1e-6) {
+      throw new Error('groupProbabilities must sum to 1');
+    }
+    const r = Math.random();
+    let acc = 0;
+    for (let i = 0; i < groups.length; i++) {
+      acc += probs[i]; // builds a cdf over probs
+      if (r < acc) {
+        selectedGroup = groups[i];
+        break;
+      }
+    }
+  }
 
   // Create a new cohort and transfer participants
+  // Get the current number of cohorts for this experiment
+  const cohortsSnapshot = await transaction.get(
+    firestore.collection('experiments').doc(experimentId).collection('cohorts'),
+  );
+  const cohortCount = cohortsSnapshot.size; // Will always be 1 greater than the number of cohorts, since that is zero-based
+  const groupName = selectedGroup
+    ? `${selectedGroup} ${cohortCount}`
+    : `Cohort ${cohortCount}`;
   const cohortConfig = createCohortConfig({
     id: generateId(),
-    metadata: createMetadataConfig({ creator: 'system', dateCreated: Timestamp.now(), dateModified: Timestamp.now() }),
+    metadata: createMetadataConfig({
+      creator: 'system',
+      dateCreated: Timestamp.now(),
+      dateModified: Timestamp.now(),
+      name: groupName,
+    }),
     participantConfig: stageConfig.newCohortParticipantConfig,
+    group: selectedGroup,
   });
 
-  console.log(`Creating cohort ${cohortConfig.id} for participants: ${cohortParticipants.map((p) => p.publicId).join(', ')}`);
+  console.log(
+    `Creating cohort ${cohortConfig.id} for participants: ${cohortParticipants.map((p) => p.publicId).join(', ')} group: ${selectedGroup}`,
+  );
 
   await createCohortInternal(transaction, experimentId, cohortConfig);
 
@@ -327,7 +379,9 @@ export async function handleAutomaticTransfer(
       currentStatus: ParticipantStatus.TRANSFER_PENDING,
     });
 
-    console.log(`Transferring participant ${participant.publicId} to cohort ${cohortConfig.id}`);
+    console.log(
+      `Transferring participant ${participant.publicId} to cohort ${cohortConfig.id}`,
+    );
   }
 
   // Update the passed-in participant as a side-effect, since this is how we merge all the changes
@@ -335,7 +389,7 @@ export async function handleAutomaticTransfer(
   participant.currentStatus = ParticipantStatus.TRANSFER_PENDING;
   participant.transferCohortId = cohortConfig.id;
 
-  return { currentStageId: stageConfig.id, endExperiment: false };
+  return {currentStageId: stageConfig.id, endExperiment: false};
 }
 
 /** Fetch a participant record by experimentId and participantId. */

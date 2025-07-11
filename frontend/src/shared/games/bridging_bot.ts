@@ -30,6 +30,7 @@ import {
   SurveyQuestion,
   SurveyStageConfig,
   AgentPersonaType,
+  createCohortParticipantConfig,
 } from '@deliberation-lab/utils';
 
 export const BBOT_METADATA = createMetadataConfig({
@@ -602,6 +603,15 @@ const BBOT_TRANSFER_STAGE = createTransferStage({
   surveyStageId: 'reproductive_rights_survey_pre',
   surveyQuestionId: 'abortion_policy_preference',
   participantCounts: {illegal: 1, legal: 1},
+  newCohortParticipantConfig: createCohortParticipantConfig({
+    maxParticipantsPerCohort: 2,
+    includeAllParticipantsInCohortCount: false,
+  }),
+  groupProbabilities: {
+    control: 0.3334, // No moderator message
+    fixed: 0.3333, // Standard pre-written message
+    bot: 0.3333, // AI moderation message
+  },
 });
 
 const BBOT_CHAT_INTRO_TEXT = `In the next stage, you will have a chat conversation about abortion policy with another participant who may see the issue differently.
