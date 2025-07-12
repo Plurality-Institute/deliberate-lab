@@ -93,7 +93,7 @@ export class CohortSettingsDialog extends MobxLitElement {
                 cohort.id,
                 cohort.metadata,
                 cohort.participantConfig,
-                cohort.group, // Pass group to updateCohortMetadata
+                cohort.group,
               );
               this.experimentManager.setCohortEditing(undefined);
             }}
