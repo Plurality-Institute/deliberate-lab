@@ -39,6 +39,7 @@ export const UpdateCohortMetadataData = Type.Object(
     cohortId: Type.String({minLength: 1}),
     metadata: MetadataConfigSchema,
     participantConfig: CohortParticipantConfigSchema,
+    group: Type.Optional(Type.String()),
   },
   strict,
 );

@@ -341,6 +341,13 @@ export async function handleAutomaticTransfer(
   }
 
   // Create a new cohort and transfer participants
+  // Fetch experiment metadata to get the creator
+  const experimentDoc = await transaction.get(
+    firestore.collection('experiments').doc(experimentId),
+  );
+  const experimentData = experimentDoc.data() as Experiment;
+  const experimentCreator = experimentData?.metadata?.creator || 'system';
+
   // Get the current number of cohorts for this experiment
   const cohortsSnapshot = await transaction.get(
     firestore.collection('experiments').doc(experimentId).collection('cohorts'),
@@ -352,7 +359,7 @@ export async function handleAutomaticTransfer(
   const cohortConfig = createCohortConfig({
     id: generateId(),
     metadata: createMetadataConfig({
-      creator: 'system',
+      creator: experimentCreator, // set to experiment creator
       dateCreated: Timestamp.now(),
       dateModified: Timestamp.now(),
       name: groupName,

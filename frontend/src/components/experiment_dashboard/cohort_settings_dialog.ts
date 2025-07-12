@@ -24,6 +24,28 @@ export class CohortSettingsDialog extends MobxLitElement {
   private readonly analyticsService = core.getService(AnalyticsService);
   private readonly experimentManager = core.getService(ExperimentManager);
 
+  private renderGroup() {
+    const updateGroup = (e: InputEvent) => {
+      const group = (e.target as HTMLInputElement).value;
+      const cohort = this.experimentManager.cohortEditing;
+      if (!cohort) return;
+      this.experimentManager.setCohortEditing({
+        ...cohort,
+        group,
+      });
+    };
+    return html`
+      <pr-textarea
+        label="Experiment group (optional)"
+        placeholder="e.g., control, experiment_a, treatment"
+        variant="outlined"
+        .value=${this.experimentManager.cohortEditing?.group ?? ''}
+        @input=${updateGroup}
+      >
+      </pr-textarea>
+    `;
+  }
+
   override render() {
     if (!this.experimentManager.cohortEditing) {
       return nothing;
@@ -44,7 +66,7 @@ export class CohortSettingsDialog extends MobxLitElement {
           </pr-icon-button>
         </div>
         <div class="body">
-          ${this.renderName()} ${this.renderDescription()}
+          ${this.renderName()} ${this.renderGroup()} ${this.renderDescription()}
           ${this.renderMaxParticipantConfig()}
         </div>
         <div class="footer">
@@ -71,6 +93,7 @@ export class CohortSettingsDialog extends MobxLitElement {
                 cohort.id,
                 cohort.metadata,
                 cohort.participantConfig,
+                cohort.group, // Pass group to updateCohortMetadata
               );
               this.experimentManager.setCohortEditing(undefined);
             }}
