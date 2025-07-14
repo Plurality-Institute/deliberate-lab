@@ -124,6 +124,11 @@ export interface AgentChatPromptConfig extends BaseAgentPromptConfig {
   chatSettings: AgentChatSettings;
   // DEPRECATED: Use structuredOutputConfig, not responseConfig
   responseConfig?: AgentResponseConfig;
+  // Optional: LLM prompt and config for deciding whether to respond
+  shouldRespondPromptContext?: string;
+  shouldRespondModelSettings?: AgentModelSettings;
+  shouldRespondGenerationConfig?: ModelGenerationConfig;
+  shouldRespondStructuredOutputConfig?: StructuredOutputConfig;
 }
 
 export enum AgentPersonaType {
@@ -234,6 +239,11 @@ export function createAgentChatPromptConfig(
     chatSettings: config.chatSettings ?? createAgentChatSettings(),
     structuredOutputConfig:
       config.structuredOutputConfig ?? createStructuredOutputConfig(),
+    shouldRespondPromptContext: config.shouldRespondPromptContext,
+    shouldRespondModelSettings: config.shouldRespondModelSettings,
+    shouldRespondGenerationConfig: config.shouldRespondGenerationConfig,
+    shouldRespondStructuredOutputConfig:
+      config.shouldRespondStructuredOutputConfig,
   };
 }
 
