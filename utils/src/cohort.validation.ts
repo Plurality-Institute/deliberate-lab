@@ -19,6 +19,7 @@ export const CohortCreationData = Type.Object(
         metadata: MetadataConfigSchema,
         participantConfig: CohortParticipantConfigSchema,
         stageUnlockMap: Type.Record(Type.String(), Type.Boolean()),
+        experimentalCondition: Type.Optional(Type.String()),
       },
       strict,
     ),
@@ -38,6 +39,7 @@ export const UpdateCohortMetadataData = Type.Object(
     cohortId: Type.String({minLength: 1}),
     metadata: MetadataConfigSchema,
     participantConfig: CohortParticipantConfigSchema,
+    experimentalCondition: Type.Optional(Type.String()),
   },
   strict,
 );
