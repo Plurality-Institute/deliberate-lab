@@ -681,7 +681,7 @@ const createBbotAgent = () => {
     }),
     defaultModelSettings: createAgentModelSettings({
       apiType: ApiKeyType.OPENAI_API_KEY,
-      modelName: 'gpt-4o',
+      modelName: 'gpt-4.1-2025-04-14',
     }),
   });
 
