@@ -318,31 +318,32 @@ const BBOT_DEMOGRAPHIC_SURVEY_STAGE = createSurveyStage({
       ]),
     }),
 
-    createMultipleChoiceSurveyQuestion({
-      questionTitle:
-        'Which of the following political parties do your views most align with?',
-      options: createMultipleChoiceItems([
-        'Democrat',
-        'Republican',
-        'Independent',
-        'Something else',
-        'Prefer not to answer',
-      ]),
-    }),
+    // Moved to DEMOGRAPHIC_QUESTIONS below
+    // createMultipleChoiceSurveyQuestion({
+    //   questionTitle:
+    //     'Which of the following political parties do your views most align with?',
+    //   options: createMultipleChoiceItems([
+    //     'Democrat',
+    //     'Republican',
+    //     'Independent',
+    //     'Something else',
+    //     'Prefer not to answer',
+    //   ]),
+    // }),
 
-    createMultipleChoiceSurveyQuestion({
-      questionTitle: 'What is your present religion, if any?',
-      options: createMultipleChoiceItems([
-        'Christianity (any tradition)',
-        'Judaism',
-        'Islam',
-        'Buddhism',
-        'Hinduism',
-        'Atheist / Agnostic / No religion in particular',
-        'Other religion or spiritual tradition',
-        'Prefer not to answer',
-      ]),
-    }),
+    // createMultipleChoiceSurveyQuestion({
+    //   questionTitle: 'What is your present religion, if any?',
+    //   options: createMultipleChoiceItems([
+    //     'Christianity (any tradition)',
+    //     'Judaism',
+    //     'Islam',
+    //     'Buddhism',
+    //     'Hinduism',
+    //     'Atheist / Agnostic / No religion in particular',
+    //     'Other religion or spiritual tradition',
+    //     'Prefer not to answer',
+    //   ]),
+    // }),
 
     createMultipleChoiceSurveyQuestion({
       questionTitle:
@@ -365,8 +366,38 @@ const SORTING_HAT_QUESTION = createMultipleChoiceSurveyQuestion({
   ],
 });
 
+const DEMOGRAPHIC_QUESTIONS: SurveyQuestion[] = [
+  createMultipleChoiceSurveyQuestion({
+    questionTitle:
+      'Which of the following political parties do your views most align with?',
+    options: createMultipleChoiceItems([
+      'Democrat',
+      'Republican',
+      'Independent',
+      'Something else',
+      'Prefer not to answer',
+    ]),
+  }),
+
+  createMultipleChoiceSurveyQuestion({
+    questionTitle: 'What is your present religion, if any?',
+    options: createMultipleChoiceItems([
+      'Christianity (any tradition)',
+      'Judaism',
+      'Islam',
+      'Buddhism',
+      'Hinduism',
+      'Atheist / Agnostic / No religion in particular',
+      'Other religion or spiritual tradition',
+      'Prefer not to answer',
+    ]),
+  }),
+];
+
 const BELIEF_QUESTIONS: SurveyQuestion[] = [
   SORTING_HAT_QUESTION,
+
+  ...DEMOGRAPHIC_QUESTIONS,
 
   createMultipleChoiceSurveyQuestion({
     questionTitle:
@@ -420,7 +451,7 @@ if (SKIP_INITIAL_SURVEY) {
     id: 'reproductive_rights_survey_pre',
     name: 'Beliefs about abortion',
     game: StageGame.BBOT,
-    questions: [SORTING_HAT_QUESTION],
+    questions: [SORTING_HAT_QUESTION, ...DEMOGRAPHIC_QUESTIONS],
   });
 } else {
   BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_PRE = createSurveyStage({
