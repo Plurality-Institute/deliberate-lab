@@ -322,7 +322,10 @@ export async function getAgentChatAPIResponse(
     );
 
     if (shouldRespondResponse.status !== ModelResponseStatus.OK) {
-      // TODO: Surface the error to the experimenter.
+      console.error(
+        `Error in should-respond response: ${shouldRespondResponse.status}: ${shouldRespondResponse.errorMessage}`,
+      );
+      // TODO: log error to Firestore?
       return null;
     }
 
@@ -365,7 +368,10 @@ export async function getAgentChatAPIResponse(
   );
 
   if (response.status !== ModelResponseStatus.OK) {
-    // TODO: Surface the error to the experimenter.
+    console.error(
+      `Error in message generation response: ${response.status}: ${response.errorMessage}`,
+    );
+    // TODO: log error to Firestore?
     return null;
   }
 
