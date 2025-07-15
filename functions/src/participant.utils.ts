@@ -319,22 +319,22 @@ export async function handleAutomaticTransfer(
     cohortParticipants.push(...matchingParticipants.slice(0, requiredCount));
   }
 
-  // Select group if groupProbabilities is provided
-  let selectedGroup: string | undefined = undefined;
-  if (stageConfig.groupProbabilities) {
-    const groupProbabilities = stageConfig.groupProbabilities;
-    const groups = Object.keys(groupProbabilities);
-    const probs = Object.values(groupProbabilities);
+  // Select experimental condition if conditionProbabilities is provided
+  let selectedCondition: string | undefined = undefined;
+  if (stageConfig.conditionProbabilities) {
+    const conditionProbabilities = stageConfig.conditionProbabilities;
+    const conditions = Object.keys(conditionProbabilities);
+    const probs = Object.values(conditionProbabilities);
     const sum = probs.reduce((a, b) => a + b, 0);
     if (Math.abs(sum - 1) > 1e-6) {
-      throw new Error('groupProbabilities must sum to 1');
+      throw new Error('conditionProbabilities must sum to 1');
     }
     const r = Math.random();
     let acc = 0;
-    for (let i = 0; i < groups.length; i++) {
+    for (let i = 0; i < conditions.length; i++) {
       acc += probs[i]; // builds a cdf over probs
       if (r < acc) {
-        selectedGroup = groups[i];
+        selectedCondition = conditions[i];
         break;
       }
     }
@@ -353,8 +353,8 @@ export async function handleAutomaticTransfer(
     firestore.collection('experiments').doc(experimentId).collection('cohorts'),
   );
   const cohortCount = cohortsSnapshot.size; // Will always be 1 greater than the number of cohorts, since that is zero-based
-  const groupName = selectedGroup
-    ? `${selectedGroup} ${cohortCount}`
+  const conditionName = selectedCondition
+    ? `${selectedCondition} ${cohortCount}`
     : `Cohort ${cohortCount}`;
   const cohortConfig = createCohortConfig({
     id: generateId(),
@@ -362,14 +362,14 @@ export async function handleAutomaticTransfer(
       creator: experimentCreator, // set to experiment creator
       dateCreated: Timestamp.now(),
       dateModified: Timestamp.now(),
-      name: groupName,
+      name: conditionName,
     }),
     participantConfig: stageConfig.newCohortParticipantConfig,
-    group: selectedGroup,
+    experimentalCondition: selectedCondition,
   });
 
   console.log(
-    `Creating cohort ${cohortConfig.id} for participants: ${cohortParticipants.map((p) => p.publicId).join(', ')} group: ${selectedGroup}`,
+    `Creating cohort ${cohortConfig.id} for participants: ${cohortParticipants.map((p) => p.publicId).join(', ')} experimentalCondition: ${selectedCondition}`,
   );
 
   await createCohortInternal(transaction, experimentId, cohortConfig);

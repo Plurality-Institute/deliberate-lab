@@ -23,7 +23,7 @@ export interface TransferStageConfig extends BaseStageConfig {
   surveyQuestionId?: string; // ID of the survey question to reference
   participantCounts?: {[key: string]: number}; // Map of serialized survey answers to required participant counts
   newCohortParticipantConfig?: CohortParticipantConfig; // Cohort participant config for new cohorts
-  groupProbabilities?: Record<string, number>; // Map of group name to probability. Must sum to 1.
+  conditionProbabilities?: Record<string, number>; // Map of experimental condition to probability. Must sum to 1.
 }
 
 // ************************************************************************* //
@@ -51,6 +51,6 @@ export function createTransferStage(
     surveyQuestionId: config.surveyQuestionId,
     participantCounts: config.participantCounts,
     newCohortParticipantConfig: config.newCohortParticipantConfig,
-    groupProbabilities: config.groupProbabilities,
+    conditionProbabilities: config.conditionProbabilities,
   };
 }

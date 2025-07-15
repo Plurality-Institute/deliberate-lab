@@ -4,7 +4,7 @@ import '../../pair-components/textarea';
 
 import {MobxLitElement} from '@adobe/lit-mobx';
 import {CSSResultGroup, html, nothing} from 'lit';
-import {customElement, property} from 'lit/decorators.js';
+import {customElement} from 'lit/decorators.js';
 
 import '@material/web/checkbox/checkbox.js';
 
@@ -24,23 +24,24 @@ export class CohortSettingsDialog extends MobxLitElement {
   private readonly analyticsService = core.getService(AnalyticsService);
   private readonly experimentManager = core.getService(ExperimentManager);
 
-  private renderGroup() {
-    const updateGroup = (e: InputEvent) => {
-      const group = (e.target as HTMLInputElement).value;
+  private renderCondition() {
+    const updateCondition = (e: InputEvent) => {
+      const experimentalCondition = (e.target as HTMLInputElement).value;
       const cohort = this.experimentManager.cohortEditing;
       if (!cohort) return;
       this.experimentManager.setCohortEditing({
         ...cohort,
-        group,
+        experimentalCondition,
       });
     };
     return html`
       <pr-textarea
-        label="Experiment group (optional)"
+        label="Experimental condition (optional)"
         placeholder="e.g., control, experiment_a, treatment"
         variant="outlined"
-        .value=${this.experimentManager.cohortEditing?.group ?? ''}
-        @input=${updateGroup}
+        .value=${this.experimentManager.cohortEditing?.experimentalCondition ??
+        ''}
+        @input=${updateCondition}
       >
       </pr-textarea>
     `;
@@ -66,8 +67,8 @@ export class CohortSettingsDialog extends MobxLitElement {
           </pr-icon-button>
         </div>
         <div class="body">
-          ${this.renderName()} ${this.renderGroup()} ${this.renderDescription()}
-          ${this.renderMaxParticipantConfig()}
+          ${this.renderName()} ${this.renderCondition()}
+          ${this.renderDescription()} ${this.renderMaxParticipantConfig()}
         </div>
         <div class="footer">
           <pr-button
@@ -93,7 +94,7 @@ export class CohortSettingsDialog extends MobxLitElement {
                 cohort.id,
                 cohort.metadata,
                 cohort.participantConfig,
-                cohort.group,
+                cohort.experimentalCondition,
               );
               this.experimentManager.setCohortEditing(undefined);
             }}

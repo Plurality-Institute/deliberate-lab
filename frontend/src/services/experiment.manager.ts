@@ -681,7 +681,7 @@ export class ExperimentManager extends Service {
     cohortId: string,
     metadata: MetadataConfig,
     participantConfig: CohortParticipantConfig,
-    group?: string,
+    experimentalCondition?: string,
   ) {
     if (!this.sp.experimentService.experiment) return;
 
@@ -696,7 +696,7 @@ export class ExperimentManager extends Service {
           cohortId,
           metadata,
           participantConfig,
-          group,
+          experimentalCondition,
         },
       );
     }

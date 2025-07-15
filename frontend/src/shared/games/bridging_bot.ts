@@ -607,7 +607,7 @@ const BBOT_TRANSFER_STAGE = createTransferStage({
     maxParticipantsPerCohort: 2,
     includeAllParticipantsInCohortCount: false,
   }),
-  groupProbabilities: {
+  conditionProbabilities: {
     control: 0.3334, // No moderator message
     fixed: 0.3333, // Standard pre-written message
     bot: 0.3333, // AI moderation message
