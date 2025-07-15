@@ -377,7 +377,7 @@ export async function getAgentChatAPIResponse(
 
   // Add agent message if non-empty
   let message = response.text!;
-  let parsed: Record<string, string | boolean | number | null>;
+  let parsed: Record<string, string> = {};
 
   if (promptConfig.responseConfig?.isJSON) {
     // Reset message to empty before trying to fill with JSON response
