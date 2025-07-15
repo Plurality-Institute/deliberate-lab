@@ -21,8 +21,9 @@ export interface TransferStageConfig extends BaseStageConfig {
   enableSurveyMatching?: boolean; // Whether to enable survey-based participant matching
   surveyStageId?: string; // ID of the survey stage to reference
   surveyQuestionId?: string; // ID of the survey question to reference
-  participantCounts?: { [key: string]: number }; // Map of serialized survey answers to required participant counts
+  participantCounts?: {[key: string]: number}; // Map of serialized survey answers to required participant counts
   newCohortParticipantConfig?: CohortParticipantConfig; // Cohort participant config for new cohorts
+  conditionProbabilities?: Record<string, number>; // Map of experimental condition to probability. Must sum to 1.
 }
 
 // ************************************************************************* //
@@ -49,5 +50,7 @@ export function createTransferStage(
     surveyStageId: config.surveyStageId,
     surveyQuestionId: config.surveyQuestionId,
     participantCounts: config.participantCounts,
+    newCohortParticipantConfig: config.newCohortParticipantConfig,
+    conditionProbabilities: config.conditionProbabilities,
   };
 }

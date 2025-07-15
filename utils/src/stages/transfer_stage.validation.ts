@@ -24,6 +24,9 @@ export const TransferStageConfigData = Type.Object(
     progress: StageProgressConfigSchema,
     enableTimeout: Type.Boolean(),
     timeoutSeconds: Type.Number(),
+    conditionProbabilities: Type.Optional(
+      Type.Record(Type.String(), Type.Number()),
+    ),
   },
   strict,
 );
