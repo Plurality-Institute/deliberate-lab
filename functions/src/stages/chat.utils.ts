@@ -366,8 +366,28 @@ export async function getAgentChatAPIResponse(
 
   // STATIC: send static message if present, but after using the LLM to determine if we should respond
   if (responseType === 'static') {
-    const staticMessage = conditionConfig?.staticMessage || '';
+    let staticMessage = conditionConfig?.staticMessage || '';
     if (!staticMessage.trim()) return null;
+    // Substitute {{participants}} with names of chat participants, formatted nicely
+    const participants = (
+      await getFirestoreActiveParticipants(experimentId, cohortId)
+    )
+      .filter((p) => !p.agentConfig)
+      .map((p) => p.name || 'Participant');
+    let participantNames = '';
+    if (participants.length === 1) {
+      participantNames = participants[0];
+    } else if (participants.length === 2) {
+      participantNames = `${participants[0]} and ${participants[1]}`;
+    } else if (participants.length > 2) {
+      participantNames = `${participants.slice(0, -1).join(', ')}, and ${participants[participants.length - 1]}`;
+    } else {
+      participantNames = 'participants';
+    }
+    staticMessage = staticMessage.replace(
+      /{{\s*participants\s*}}/gi,
+      participantNames,
+    );
     return {
       profile,
       profileId,
