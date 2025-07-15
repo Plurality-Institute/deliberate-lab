@@ -22,7 +22,7 @@ export interface CohortConfig {
   participantConfig: CohortParticipantConfig;
   // Maps stage ID to whether stage is unlocked (i.e., participants are ready)
   stageUnlockMap: Record<string, boolean>;
-  experimentalCondition?: string; // Freeform string for experiment group tracking
+  experimentalCondition?: string; // Freeform string for experiment condition (control, treatment, etc) tracking
 }
 
 // ************************************************************************* //
