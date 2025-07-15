@@ -1,8 +1,7 @@
 import {
   AgentChatPromptConfig,
-  AgentPersonaConfig,
+  CohortConfig,
   MediatorProfile,
-  ProfileAgentConfig,
   createMediatorProfileFromAgentPersona,
 } from '@deliberation-lab/utils';
 import {getAgentPersonas} from './agent.utils';
@@ -12,10 +11,12 @@ import {app} from './app';
 /** Create mediators for all agent personas with isDefaultAddToCohort true. */
 export async function createMediatorsForCohort(
   experimentId: string,
-  cohortId: string,
-): MediatorProfile[] {
+  cohort: CohortConfig,
+): Promise<MediatorProfile[]> {
+  const cohortId = cohort.id;
   const personas = await getAgentPersonas(experimentId);
   const mediators: MediatorProfile[] = [];
+  const experimentalCondition = cohort?.experimentalCondition || '';
   for (const persona of personas) {
     if (persona.isDefaultAddToCohort) {
       const chatPrompts = (
@@ -28,12 +29,26 @@ export async function createMediatorsForCohort(
           .collection('chatPrompts')
           .get()
       ).docs.map((doc) => doc.data() as AgentChatPromptConfig);
-      const mediator = createMediatorProfileFromAgentPersona(
-        cohortId,
-        persona,
-        chatPrompts.map((prompt) => prompt.id),
-      );
-      mediators.push(mediator);
+      // For each chat prompt, check if HIDE for this condition
+      let shouldAdd = false;
+      for (const prompt of chatPrompts) {
+        const conditionConfig =
+          prompt.experimentalConditionConfig?.[experimentalCondition] ||
+          prompt.experimentalConditionConfig?._default;
+        const responseType = conditionConfig?.responseType || 'llm';
+        if (responseType !== 'hide') {
+          shouldAdd = true;
+          break;
+        }
+      }
+      if (shouldAdd) {
+        const mediator = createMediatorProfileFromAgentPersona(
+          cohortId,
+          persona,
+          chatPrompts.map((prompt) => prompt.id),
+        );
+        mediators.push(mediator);
+      }
     }
   }
   return mediators;
@@ -44,7 +59,7 @@ export async function getMediatorsInCohortStage(
   experimentId: string,
   cohortId: string,
   stageId: string,
-): MediatorProfile[] {
+): Promise<MediatorProfile[]> {
   return (
     await app
       .firestore()

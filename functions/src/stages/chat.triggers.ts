@@ -269,16 +269,17 @@ export const createAgentMessage = onDocumentCreated(
       const promptConfig = await getAgentChatPrompt(
         experimentId,
         stageId,
-        mediator.agentConfig.agentId,
+        mediator.agentConfig!.agentId,
       );
       if (!promptConfig) return null;
       const response = await getAgentChatAPIResponse(
         mediator, // profile
         experimentId,
+        cohortId,
         mediator.id,
         '', // no past stage context
         chatMessages,
-        mediator.agentConfig,
+        mediator.agentConfig!,
         promptConfig,
         stage,
       );
@@ -374,6 +375,7 @@ export const createAgentParticipantMessage = onDocumentCreated(
       const response = await getAgentChatAPIResponse(
         participant, // profile
         experimentId,
+        cohortId,
         participant.publicId,
         pastStageContext,
         chatMessages,
@@ -493,7 +495,7 @@ export const checkReadyToEndChat = onDocumentCreated(
           : '';
         const prompt = getDefaultChatPrompt(
           participant,
-          participant.agentConfig,
+          participant.agentConfig!,
           pastStageContext,
           chatMessages,
           promptConfig,
@@ -503,10 +505,11 @@ export const checkReadyToEndChat = onDocumentCreated(
         const response = await getAgentChatAPIResponse(
           participant, // profile
           event.params.experimentId,
+          event.params.cohortId,
           participant.publicId,
           pastStageContext,
           chatMessages,
-          participant.agentConfig,
+          participant.agentConfig!,
           promptConfig,
           stage,
         );

@@ -26,6 +26,7 @@ import {getAgentResponse} from '../agent.utils';
 import {
   getExperimenterDataFromExperiment,
   getFirestoreActiveParticipants,
+  getFirestoreCohort,
   getFirestoreStagePublicData,
 } from '../utils/firestore';
 import {getPastStagesPromptContext} from './stage.utils';
@@ -271,6 +272,7 @@ export function canSendAgentChatMessage(
 export async function getAgentChatAPIResponse(
   profile: ParticipantProfileBase,
   experimentId: string,
+  cohortId: string,
   profileId: string, // participant public ID or mediator ID
   pastStageContext: string,
   chatMessages: ChatMessage[], // TODO: Get in current stage
@@ -278,6 +280,19 @@ export async function getAgentChatAPIResponse(
   promptConfig: AgentChatPromptConfig,
   stageConfig: StageConfig,
 ): Promise<AgentChatResponse | null> {
+  // Look up cohort to get experimentalCondition
+  const cohort = await getFirestoreCohort(experimentId, cohortId);
+  const experimentalCondition = cohort?.experimentalCondition || '';
+  const conditionConfig =
+    promptConfig.experimentalConditionConfig?.[experimentalCondition] ||
+    promptConfig.experimentalConditionConfig?._default;
+
+  const responseType = conditionConfig?.responseType || 'llm';
+
+  if (responseType === 'none' || responseType === 'hide') {
+    return null;
+  }
+
   // Fetch experiment creator's API key.
   const experimenterData =
     await getExperimenterDataFromExperiment(experimentId);
@@ -347,6 +362,20 @@ export async function getAgentChatAPIResponse(
       return null;
     }
     // Otherwise, continue to main prompt as usual
+  }
+
+  // STATIC: send static message if present, but after using the LLM to determine if we should respond
+  if (responseType === 'static') {
+    const staticMessage = conditionConfig?.staticMessage || '';
+    if (!staticMessage.trim()) return null;
+    return {
+      profile,
+      profileId,
+      agentId: agentConfig.agentId,
+      promptConfig,
+      parsed: {},
+      message: staticMessage,
+    };
   }
 
   // Create prompt
@@ -546,6 +575,7 @@ export async function initiateChatDiscussion(
     const response = await getAgentChatAPIResponse(
       profile, // profile
       experimentId,
+      cohortId,
       publicId,
       pastStageContext,
       chatMessages,
