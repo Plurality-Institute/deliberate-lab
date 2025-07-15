@@ -8,7 +8,6 @@ import {
   ModelGenerationConfig,
   ParticipantProfileExtended,
   ParticipantStatus,
-  StageConfig,
   StageKind,
   StructuredOutputConfig,
   makeStructuredOutputPrompt,
@@ -80,6 +79,8 @@ export async function getAgentResponse(
       `GetAgentResponse: response error status: ${response.status}; message: ${response.errorMessage}`,
     );
   }
+
+  console.log('llm response:', response);
 
   return response;
 }

@@ -2,14 +2,13 @@ import {
   AgentChatPromptConfig,
   AgentChatResponse,
   AgentChatSettings,
+  AgentPersonaType,
   ChatMessage,
   ChatStageConfig,
   ChatStagePublicData,
-  ExperimenterData,
-  MediatorStatus,
-  ParticipantProfile,
-  ParticipantProfileExtended,
-  ParticipantStatus,
+  ParticipantProfileBase,
+  ProfileAgentConfig,
+  StageConfig,
   StageKind,
   awaitTypingDelay,
   createAgentChatPromptConfig,
@@ -123,7 +122,7 @@ export async function updateCurrentDiscussionIndex(
   );
 
   // Check if active participants are ready to end current discussion
-  const currentDiscussionId = publicStageData.currentDiscussionId;
+  const currentDiscussionId = publicStageData.currentDiscussionId!;
   const isReadyToEndDiscussion = () => {
     const timestampMap = publicStageData.discussionTimestampMap;
 
@@ -201,7 +200,7 @@ export async function getAgentChatPrompt(
   experimentId: string,
   stageId: string,
   agentId: string,
-): AgentChatPromptConfig | null {
+): Promise<AgentChatPromptConfig | null> {
   const prompt = await app
     .firestore()
     .collection('experiments')
@@ -278,7 +277,7 @@ export async function getAgentChatAPIResponse(
   agentConfig: ProfileAgentConfig,
   promptConfig: AgentChatPromptConfig,
   stageConfig: StageConfig,
-): AgentChatResponse | null {
+): Promise<AgentChatResponse | null> {
   // Fetch experiment creator's API key.
   const experimenterData =
     await getExperimenterDataFromExperiment(experimentId);
@@ -290,6 +289,66 @@ export async function getAgentChatAPIResponse(
     return null;
   }
 
+  if (promptConfig.shouldRespondPromptContext) {
+    // Use custom model settings/configs if provided, else fall back to main prompt's
+    const shouldRespondModelSettings =
+      promptConfig.shouldRespondModelSettings || agentConfig.modelSettings;
+    const shouldRespondGenerationConfig =
+      promptConfig.shouldRespondGenerationConfig ||
+      promptConfig.generationConfig;
+    const shouldRespondStructuredOutputConfig =
+      promptConfig.shouldRespondStructuredOutputConfig ||
+      promptConfig.structuredOutputConfig;
+
+    // Compose the should-respond prompt, appending the same context as the main prompt
+    const shouldRespondPrompt = [
+      promptConfig.shouldRespondPromptContext,
+      getDefaultChatPrompt(
+        profile,
+        agentConfig,
+        pastStageContext,
+        chatMessages,
+        promptConfig,
+        stageConfig as ChatStageConfig,
+      ),
+    ].join('\n\n');
+
+    const shouldRespondResponse = await getAgentResponse(
+      experimenterData,
+      shouldRespondPrompt,
+      shouldRespondModelSettings,
+      shouldRespondGenerationConfig,
+      shouldRespondStructuredOutputConfig,
+    );
+
+    if (shouldRespondResponse.status !== ModelResponseStatus.OK) {
+      console.error(
+        `Error in should-respond response: ${shouldRespondResponse.status}: ${shouldRespondResponse.errorMessage}`,
+      );
+      // TODO: log error to Firestore?
+      return null;
+    }
+
+    // Parse should-respond result (assume JSON with shouldRespondField)
+    let shouldRespondParsed: Record<string, string | boolean | number | null>;
+    try {
+      const cleanedText = shouldRespondResponse
+        .text!.replace(/```json\s*|\s*```/g, '')
+        .trim();
+      shouldRespondParsed = JSON.parse(cleanedText);
+    } catch {
+      console.log('Could not parse should-respond JSON!');
+      return null;
+    }
+    const shouldRespondField =
+      shouldRespondStructuredOutputConfig.shouldRespondField || 'shouldRespond';
+    if (!shouldRespondParsed[shouldRespondField]) {
+      // Model says not to respond
+      return null;
+    }
+    // Otherwise, continue to main prompt as usual
+  }
+
   // Create prompt
   const prompt = getDefaultChatPrompt(
     profile,
@@ -297,7 +356,7 @@ export async function getAgentChatAPIResponse(
     pastStageContext,
     chatMessages,
     promptConfig,
-    stageConfig,
+    stageConfig as ChatStageConfig,
   );
 
   const response = await getAgentResponse(
@@ -309,13 +368,16 @@ export async function getAgentChatAPIResponse(
   );
 
   if (response.status !== ModelResponseStatus.OK) {
-    // TODO: Surface the error to the experimenter.
+    console.error(
+      `Error in message generation response: ${response.status}: ${response.errorMessage}`,
+    );
+    // TODO: log error to Firestore?
     return null;
   }
 
   // Add agent message if non-empty
   let message = response.text!;
-  let parsed = '';
+  let parsed: Record<string, string | boolean | number | null>;
 
   if (promptConfig.responseConfig?.isJSON) {
     // Reset message to empty before trying to fill with JSON response
@@ -455,10 +517,15 @@ export async function initiateChatDiscussion(
 
     const promptConfig =
       (await getAgentChatPrompt(experimentId, stageId, agentConfig.agentId)) ??
-      createAgentChatPromptConfig(stageId, StageKind.CHAT, {
-        promptContext:
-          'You are a participant. Respond in a quick sentence if you would like to say something. Otherwise, do not respond.',
-      });
+      createAgentChatPromptConfig(
+        stageId,
+        StageKind.CHAT,
+        AgentPersonaType.PARTICIPANT,
+        {
+          promptContext:
+            'You are a participant. Respond in a quick sentence if you would like to say something. Otherwise, do not respond.',
+        },
+      );
 
     const chatMessages: ChatMessage[] = [];
     const publicStageData = await getChatStagePublicData(
@@ -495,7 +562,7 @@ export async function initiateChatDiscussion(
       ] ?? '';
     const chatMessage = createParticipantChatMessage({
       profile: response.profile,
-      discussionId: publicStageData.currentDiscussionId,
+      discussionId: publicStageData!.currentDiscussionId,
       message: response.message,
       timestamp: Timestamp.now(),
       senderId: response.profileId,
