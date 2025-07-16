@@ -542,10 +542,10 @@ const BBOT_CONVERSATION_QUALITY_SURVEY_STAGE = createSurveyStage({
       ...AGREE_LIKERT_SCALE,
     }),
 
-    createScaleSurveyQuestion({
-      questionTitle: 'I treated my partner with respect.',
-      ...AGREE_LIKERT_SCALE,
-    }),
+    // createScaleSurveyQuestion({
+    //   questionTitle: 'I treated my partner with respect.',
+    //   ...AGREE_LIKERT_SCALE,
+    // }),
 
     createScaleSurveyQuestion({
       questionTitle: 'My partner treated me with respect.',
