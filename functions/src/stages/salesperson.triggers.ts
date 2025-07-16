@@ -100,10 +100,11 @@ export const createAgentParticipantSalespersonMessage = onDocumentCreated(
       const response = await getAgentChatAPIResponse(
         participant, // profile
         event.params.experimentId,
+        event.params.cohortId,
         participant.publicId,
         pastStageContext,
         chatMessages,
-        participant.agentConfig,
+        participant.agentConfig!,
         promptConfig,
         stage,
       );

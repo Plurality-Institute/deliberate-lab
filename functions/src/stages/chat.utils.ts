@@ -26,6 +26,7 @@ import {getAgentResponse} from '../agent.utils';
 import {
   getExperimenterDataFromExperiment,
   getFirestoreActiveParticipants,
+  getFirestoreCohort,
   getFirestoreStagePublicData,
 } from '../utils/firestore';
 import {getPastStagesPromptContext} from './stage.utils';
@@ -271,6 +272,7 @@ export function canSendAgentChatMessage(
 export async function getAgentChatAPIResponse(
   profile: ParticipantProfileBase,
   experimentId: string,
+  cohortId: string,
   profileId: string, // participant public ID or mediator ID
   pastStageContext: string,
   chatMessages: ChatMessage[], // TODO: Get in current stage
@@ -278,6 +280,19 @@ export async function getAgentChatAPIResponse(
   promptConfig: AgentChatPromptConfig,
   stageConfig: StageConfig,
 ): Promise<AgentChatResponse | null> {
+  // Look up cohort to get experimentalCondition
+  const cohort = await getFirestoreCohort(experimentId, cohortId);
+  const experimentalCondition = cohort?.experimentalCondition || '';
+  const conditionConfig =
+    promptConfig.experimentalConditionConfig?.[experimentalCondition] ||
+    promptConfig.experimentalConditionConfig?._default;
+
+  const responseType = conditionConfig?.responseType || 'llm';
+
+  if (responseType === 'none' || responseType === 'hide') {
+    return null;
+  }
+
   // Fetch experiment creator's API key.
   const experimenterData =
     await getExperimenterDataFromExperiment(experimentId);
@@ -349,6 +364,40 @@ export async function getAgentChatAPIResponse(
     // Otherwise, continue to main prompt as usual
   }
 
+  // STATIC: send static message if present, but after using the LLM to determine if we should respond
+  if (responseType === 'static') {
+    let staticMessage = conditionConfig?.staticMessage || '';
+    if (!staticMessage.trim()) return null;
+    // Substitute {{participants}} with names of chat participants, formatted nicely
+    const participants = (
+      await getFirestoreActiveParticipants(experimentId, cohortId)
+    )
+      .filter((p) => !p.agentConfig)
+      .map((p) => p.name || 'Participant');
+    let participantNames = '';
+    if (participants.length === 1) {
+      participantNames = participants[0];
+    } else if (participants.length === 2) {
+      participantNames = `${participants[0]} and ${participants[1]}`;
+    } else if (participants.length > 2) {
+      participantNames = `${participants.slice(0, -1).join(', ')}, and ${participants[participants.length - 1]}`;
+    } else {
+      participantNames = 'participants';
+    }
+    staticMessage = staticMessage.replace(
+      /{{\s*participants\s*}}/gi,
+      participantNames,
+    );
+    return {
+      profile,
+      profileId,
+      agentId: agentConfig.agentId,
+      promptConfig,
+      parsed: {},
+      message: staticMessage,
+    };
+  }
+
   // Create prompt
   const prompt = getDefaultChatPrompt(
     profile,
@@ -377,7 +426,7 @@ export async function getAgentChatAPIResponse(
 
   // Add agent message if non-empty
   let message = response.text!;
-  let parsed: Record<string, string | boolean | number | null>;
+  let parsed: Record<string, string> = {};
 
   if (promptConfig.responseConfig?.isJSON) {
     // Reset message to empty before trying to fill with JSON response
@@ -546,6 +595,7 @@ export async function initiateChatDiscussion(
     const response = await getAgentChatAPIResponse(
       profile, // profile
       experimentId,
+      cohortId,
       publicId,
       pastStageContext,
       chatMessages,

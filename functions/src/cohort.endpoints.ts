@@ -13,7 +13,6 @@ import * as functions from 'firebase-functions';
 import {onCall} from 'firebase-functions/v2/https';
 
 import {app} from './app';
-import {createMediatorsForCohort} from './mediator.utils';
 import {AuthGuard} from './utils/auth-guard';
 import {
   checkConfigDataUnionOnPath,

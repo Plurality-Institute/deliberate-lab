@@ -117,6 +117,19 @@ export interface BaseAgentPromptConfig {
 /** Prompt config for completing stage (e.g., survey questions). */
 export type AgentParticipantPromptConfig = BaseAgentPromptConfig;
 
+export enum AgentChatResponseType {
+  STATIC = 'static', // Fixed response (e.g., "Come come, elucidate your thoughts.")
+  LLM = 'llm', // LLM-generated response
+  NONE = 'none', // No response, but the agent is still present in the chat
+  HIDE = 'hide', // Hide the agent entirely
+}
+
+export interface AgentExperimentalConditionConfig {
+  // Condition name isn't here, since it will be the key in the config map
+  responseType: AgentChatResponseType;
+  staticMessage?: string; // Static message to use if responseType is STATIC
+}
+
 /** Prompt config for sending chat messages
  * (sent to specified API on stage's chat trigger)
  */
@@ -129,6 +142,10 @@ export interface AgentChatPromptConfig extends BaseAgentPromptConfig {
   shouldRespondModelSettings?: AgentModelSettings;
   shouldRespondGenerationConfig?: ModelGenerationConfig;
   shouldRespondStructuredOutputConfig?: StructuredOutputConfig;
+  experimentalConditionConfig?: Record<
+    string,
+    AgentExperimentalConditionConfig
+  >;
 }
 
 export enum AgentPersonaType {
@@ -244,6 +261,8 @@ export function createAgentChatPromptConfig(
     shouldRespondGenerationConfig: config.shouldRespondGenerationConfig,
     shouldRespondStructuredOutputConfig:
       config.shouldRespondStructuredOutputConfig,
+    experimentalConditionConfig:
+      config.experimentalConditionConfig ?? createExperimentalConditionConfig(),
   };
 }
 
@@ -283,5 +302,17 @@ export function createAgentParticipantPersonaConfig(
       }),
     defaultModelSettings:
       config.defaultModelSettings ?? createAgentModelSettings(),
+  };
+}
+
+export function createExperimentalConditionConfig(
+  config: Record<string, AgentExperimentalConditionConfig> = {},
+): Record<string, AgentExperimentalConditionConfig> {
+  return {
+    // Default condition for agent chat responses, used if specified condition is missing
+    _default: {
+      responseType: AgentChatResponseType.LLM,
+    },
+    ...config,
   };
 }
