@@ -5,17 +5,18 @@ import {
   onDocumentWritten,
 } from 'firebase-functions/v2/firestore';
 import {
-  ChatMessage,
   ChatStageParticipantAnswer,
-  StageParticipantAnswer,
   StageKind,
   createAgentChatPromptConfig,
   createChatStageParticipantAnswer,
   createMediatorChatMessage,
   createParticipantChatMessage,
-  getDefaultChatPrompt,
   getTimeElapsed,
   DEFAULT_AGENT_PARTICIPANT_CHAT_PROMPT,
+  ChatStagePublicData,
+  ParticipantProfileExtended,
+  StageConfig,
+  Experiment,
 } from '@deliberation-lab/utils';
 import {updateCurrentDiscussionIndex} from './chat.utils';
 import {getPastStagesPromptContext} from './stage.utils';
@@ -26,6 +27,7 @@ import {
   getFirestoreParticipant,
   getFirestoreParticipantRef,
   getFirestoreParticipantAnswer,
+  getFirestoreParticipantAnswerRef,
 } from '../utils/firestore';
 import {
   getAgentChatAPIResponse,
@@ -152,7 +154,7 @@ export const updateCurrentChatDiscussionId = onDocumentWritten(
     timeoutSeconds: 60,
   },
   async (event) => {
-    const data = event.data!.after.data() as StageParticipantAnswer | undefined;
+    const data = event.data!.after.data() as ChatStageParticipantAnswer;
 
     const stageDocument = app
       .firestore()
@@ -189,7 +191,7 @@ export const updateCurrentChatDiscussionId = onDocumentWritten(
       // Update public stage data
       const publicStageData = (
         await publicDocument.get()
-      ).data() as StagePublicData;
+      ).data() as ChatStagePublicData;
       const discussionStatusMap = data.discussionTimestampMap;
 
       for (const discussionId of Object.keys(discussionStatusMap)) {
@@ -438,8 +440,6 @@ export const checkReadyToEndChat = onDocumentCreated(
     timeoutSeconds: 60, // Maximum timeout of 1 minute for typing delay.
   },
   async (event) => {
-    const data = event.data?.data() as ChatMessage | undefined;
-
     await app.firestore().runTransaction(async (transaction) => {
       // Use experiment config to get ChatStageConfig with agents.
       // TODO: Add separate readyToEndChat trigger for other stages with chat
@@ -483,6 +483,7 @@ export const checkReadyToEndChat = onDocumentCreated(
       const promptConfig = createAgentChatPromptConfig(
         event.params.stageId,
         StageKind.CHAT,
+        AgentPersonaType.PARTICIPANT,
         {
           promptContext:
             'Are you ready to end the conversation and stop talking? Please consider whether you have met your goals and explicitly communicated this to other participants. If you have more to say or have yet to explicitly agree in the chat, you should not end the discussion yet. If so, respond the exact word YES. Otherwise, do not return anything.',
@@ -509,14 +510,6 @@ export const checkReadyToEndChat = onDocumentCreated(
               promptConfig.promptSettings.includeStageInfo,
             )
           : '';
-        const prompt = getDefaultChatPrompt(
-          participant,
-          participant.agentConfig!,
-          pastStageContext,
-          chatMessages,
-          promptConfig,
-          stage,
-        );
 
         const response = await getAgentChatAPIResponse(
           participant, // profile
@@ -540,9 +533,10 @@ export const checkReadyToEndChat = onDocumentCreated(
         // If threaded discussion (and not last thread), move to next thread
         if (
           stage.discussions.length > 0 &&
+          publicStageData &&
           publicStageData.currentDiscussionId &&
           publicStageData.currentDiscussionId !==
-            stage.discussions[stage.discussions.length - 1]
+            stage.discussions[stage.discussions.length - 1].id
         ) {
           const chatAnswer = await getFirestoreParticipantAnswer(
             event.params.experimentId,
@@ -563,6 +557,11 @@ export const checkReadyToEndChat = onDocumentCreated(
             participantAnswer.discussionTimestampMap[
               publicStageData.currentDiscussionId
             ] = Timestamp.now();
+            const participantAnswerDoc = getFirestoreParticipantAnswerRef(
+              event.params.experimentId,
+              participant.privateId,
+              event.params.stageId,
+            );
             await transaction.set(participantAnswerDoc, participantAnswer);
           }
         } else {
