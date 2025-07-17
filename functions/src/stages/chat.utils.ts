@@ -35,13 +35,16 @@ import {getPastStagesPromptContext} from './stage.utils';
 export async function getChatStage(
   experimentId: string,
   stageId: string,
+  transaction?: FirebaseFirestore.Transaction,
 ): Promise<ChatStageConfig | null> {
   const stageRef = app
     .firestore()
     .doc(`experiments/${experimentId}/stages/${stageId}`);
 
-  const stageDoc = await stageRef.get();
-  if (!stageDoc.exists) return null; // Return null if the stage doesn't exist.
+  const stageDoc = transaction
+    ? await transaction.get(stageRef)
+    : await stageRef.get();
+  if (!stageDoc.exists) return null;
 
   return stageDoc.data() as ChatStageConfig; // Return the stage data.
 }
@@ -51,11 +54,13 @@ export async function getChatStagePublicData(
   experimentId: string,
   cohortId: string,
   stageId: string,
+  transaction?: FirebaseFirestore.Transaction,
 ): Promise<ChatStagePublicData | null> {
   const data = await getFirestoreStagePublicData(
     experimentId,
     cohortId,
     stageId,
+    transaction,
   );
   if (data?.kind !== StageKind.CHAT) return null; // Return null if the public stage data doesn't exist.
 
@@ -67,20 +72,21 @@ export async function getChatMessages(
   experimentId: string,
   cohortId: string,
   stageId: string,
+  transaction?: FirebaseFirestore.Transaction,
 ): Promise<ChatMessage[]> {
-  try {
-    return (
-      await app
-        .firestore()
-        .collection(
-          `experiments/${experimentId}/cohorts/${cohortId}/publicStageData/${stageId}/chats`,
-        )
-        .orderBy('timestamp', 'asc')
-        .get()
-    ).docs.map((doc) => doc.data() as ChatMessage);
-  } catch (error) {
-    console.log(error);
-    return [];
+  const collectionRef = app
+    .firestore()
+    .collection(
+      `experiments/${experimentId}/cohorts/${cohortId}/publicStageData/${stageId}/chats`,
+    )
+    .orderBy('timestamp', 'asc');
+  if (transaction) {
+    const snap = await transaction.get(collectionRef);
+    return snap.docs.map((doc) => doc.data() as ChatMessage);
+  } else {
+    return (await collectionRef.get()).docs.map(
+      (doc) => doc.data() as ChatMessage,
+    );
   }
 }
 
@@ -89,17 +95,19 @@ export async function getChatMessageCount(
   experimentId: string,
   cohortId: string,
   stageId: string,
+  transaction?: FirebaseFirestore.Transaction,
 ): Promise<number> {
   try {
-    return (
-      await app
-        .firestore()
-        .collection(
-          `experiments/${experimentId}/cohorts/${cohortId}/publicStageData/${stageId}/chats`,
-        )
-        .count()
-        .get()
-    ).data().count;
+    const collectionRef = app
+      .firestore()
+      .collection(
+        `experiments/${experimentId}/cohorts/${cohortId}/publicStageData/${stageId}/chats`,
+      )
+      .count();
+    const snap = transaction
+      ? await transaction.get(collectionRef)
+      : await collectionRef.get();
+    return snap.data().count;
   } catch (error) {
     console.log(error);
     return 0;
@@ -201,21 +209,23 @@ export async function getAgentChatPrompt(
   experimentId: string,
   stageId: string,
   agentId: string,
+  transaction?: FirebaseFirestore.Transaction,
 ): Promise<AgentChatPromptConfig | null> {
-  const prompt = await app
+  const promptRef = app
     .firestore()
     .collection('experiments')
     .doc(experimentId)
     .collection('agents')
     .doc(agentId)
     .collection('chatPrompts')
-    .doc(stageId)
-    .get();
-
-  if (!prompt.exists) {
+    .doc(stageId);
+  const promptDoc = transaction
+    ? await transaction.get(promptRef)
+    : await promptRef.get();
+  if (!promptDoc.exists) {
     return null;
   }
-  return prompt.data() as AgentChatPromptConfig;
+  return promptDoc.data() as AgentChatPromptConfig;
 }
 
 /** Uses weighted sampling based on WPM to choose agent response. */
@@ -279,9 +289,10 @@ export async function getAgentChatAPIResponse(
   agentConfig: ProfileAgentConfig,
   promptConfig: AgentChatPromptConfig,
   stageConfig: StageConfig,
+  transaction?: FirebaseFirestore.Transaction,
 ): Promise<AgentChatResponse | null> {
   // Look up cohort to get experimentalCondition
-  const cohort = await getFirestoreCohort(experimentId, cohortId);
+  const cohort = await getFirestoreCohort(experimentId, cohortId, transaction);
   const experimentalCondition = cohort?.experimentalCondition || '';
   const conditionConfig =
     promptConfig.experimentalConditionConfig?.[experimentalCondition] ||
@@ -294,8 +305,10 @@ export async function getAgentChatAPIResponse(
   }
 
   // Fetch experiment creator's API key.
-  const experimenterData =
-    await getExperimenterDataFromExperiment(experimentId);
+  const experimenterData = await getExperimenterDataFromExperiment(
+    experimentId,
+    transaction,
+  );
   if (!experimenterData) return null;
 
   // Confirm that agent can send chat messages based on prompt config
@@ -370,7 +383,13 @@ export async function getAgentChatAPIResponse(
     if (!staticMessage.trim()) return null;
     // Substitute {{participants}} with names of chat participants, formatted nicely
     const participants = (
-      await getFirestoreActiveParticipants(experimentId, cohortId)
+      await getFirestoreActiveParticipants(
+        experimentId,
+        cohortId,
+        null,
+        false,
+        transaction,
+      )
     )
       .filter((p) => !p.agentConfig)
       .map((p) => p.name || 'Participant');
@@ -489,12 +508,14 @@ export async function sendAgentChatMessage(
   cohortId: string,
   stageId: string,
   chatId: string, // ID of chat that is being responded to
+  transaction?: FirebaseFirestore.Transaction,
 ) {
   // Don't send a message if the conversation has moved on
   const numChatsAfterAgent = await getChatMessageCount(
     experimentId,
     cohortId,
     stageId,
+    transaction,
   );
   if (numChatsAfterAgent > numChatsBeforeAgent) {
     // TODO: Write log to Firestore
@@ -511,7 +532,7 @@ export async function sendAgentChatMessage(
 
   // Don't send a message if the conversation already has a response
   // to the trigger message by the same type of agent (participant, mediator)
-  const triggerResponseDoc = app
+  const triggerResponseRef = app
     .firestore()
     .collection('experiments')
     .doc(experimentId)
@@ -521,15 +542,7 @@ export async function sendAgentChatMessage(
     .doc(stageId)
     .collection('triggerLogs')
     .doc(`${chatId}-${chatMessage.type}`);
-  const hasTriggerResponse = (await triggerResponseDoc.get()).exists;
-  if (hasTriggerResponse) {
-    return;
-  }
-
-  // Otherwise, log response to trigger message and send chat message
-  triggerResponseDoc.set({});
-
-  const agentDocument = app
+  const agentDocumentRef = app
     .firestore()
     .collection('experiments')
     .doc(experimentId)
@@ -539,7 +552,24 @@ export async function sendAgentChatMessage(
     .doc(stageId)
     .collection('chats')
     .doc(chatMessage.id);
-  agentDocument.set(chatMessage);
+
+  // Check for trigger response and write chat message atomically
+  // This must be called inside the transaction callback in the trigger!
+  if (transaction) {
+    const triggerResponseDoc = await transaction.get(triggerResponseRef);
+    if (triggerResponseDoc.exists) {
+      return;
+    }
+    transaction.set(triggerResponseRef, {});
+    transaction.set(agentDocumentRef, chatMessage);
+  } else {
+    const triggerResponseDoc = await triggerResponseRef.get();
+    if (triggerResponseDoc.exists) {
+      return;
+    }
+    await triggerResponseRef.set({});
+    await agentDocumentRef.set(chatMessage);
+  }
 }
 
 /** Check if chat conversation has not yet been started

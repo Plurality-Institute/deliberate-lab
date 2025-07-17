@@ -26,16 +26,19 @@ export async function getExperimenterData(creatorId: string) {
 }
 
 /** Get experimenter data from experiment ID. */
-export async function getExperimenterDataFromExperiment(experimentId: string) {
-  const experimentDoc = await app
-    .firestore()
-    .collection('experiments')
-    .doc(experimentId)
-    .get();
-  if (!experimentDoc) {
+export async function getExperimenterDataFromExperiment(
+  experimentId: string,
+  transaction?: FirebaseFirestore.Transaction,
+) {
+  const experimentDoc = transaction
+    ? await transaction.get(
+        app.firestore().collection('experiments').doc(experimentId),
+      )
+    : await app.firestore().collection('experiments').doc(experimentId).get();
+  if (!experimentDoc.exists) {
     return undefined;
   }
-  const creatorId = experimentDoc.data().metadata.creator;
+  const creatorId = experimentDoc.data()!.metadata.creator;
   return await getExperimenterData(creatorId);
 }
 
@@ -70,6 +73,7 @@ export async function getFirestoreActiveParticipants(
   cohortId: string,
   stageId: string | null = null, // if null, can be in any stage
   checkIsAgent = false, // whether to check if participant is agent
+  transaction?: FirebaseFirestore.Transaction,
 ) {
   // TODO: Use isActiveParticipant utils function.
   const activeStatuses = [
@@ -77,15 +81,16 @@ export async function getFirestoreActiveParticipants(
     ParticipantStatus.SUCCESS,
     ParticipantStatus.ATTENTION_CHECK,
   ];
-  const activeParticipants = (
-    await app
-      .firestore()
-      .collection('experiments')
-      .doc(experimentId)
-      .collection('participants')
-      .where('currentCohortId', '==', cohortId)
-      .get()
-  ).docs
+  const collectionRef = app
+    .firestore()
+    .collection('experiments')
+    .doc(experimentId)
+    .collection('participants')
+    .where('currentCohortId', '==', cohortId);
+  const snap = transaction
+    ? await transaction.get(collectionRef)
+    : await collectionRef.get();
+  const activeParticipants = snap.docs
     .map((doc) => doc.data() as ParticipantProfileExtended)
     .filter(
       (participant) =>
@@ -110,9 +115,10 @@ export function getFirestoreCohortRef(experimentId: string, cohortId: string) {
 export async function getFirestoreCohort(
   experimentId: string,
   cohortId: string,
+  transaction?: FirebaseFirestore.Transaction,
 ) {
   const ref = getFirestoreCohortRef(experimentId, cohortId);
-  const doc = await ref.get();
+  const doc = transaction ? await transaction.get(ref) : await ref.get();
   if (!doc.exists) return undefined;
 
   return doc.data() as CohortConfig;
@@ -158,13 +164,14 @@ export async function getFirestoreParticipantAnswer(
   experimentId: string,
   participantId: string, // private ID
   stageId: string,
+  transaction?: FirebaseFirestore.Transaction,
 ) {
   const ref = getFirestoreParticipantAnswerRef(
     experimentId,
     participantId,
     stageId,
   );
-  const doc = await ref.get();
+  const doc = transaction ? await transaction.get(ref) : await ref.get();
   if (!doc.exists) return undefined;
 
   return doc.data() as StageParticipantAnswer;
@@ -191,9 +198,10 @@ export async function getFirestoreStagePublicData(
   experimentId: string,
   cohortId: string,
   stageId: string,
+  transaction?: FirebaseFirestore.Transaction,
 ) {
   const ref = getFirestoreStagePublicDataRef(experimentId, cohortId, stageId);
-  const doc = await ref.get();
+  const doc = transaction ? await transaction.get(ref) : await ref.get();
   if (!doc.exists) return undefined;
 
   return doc.data() as StagePublicData;
