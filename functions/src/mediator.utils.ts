@@ -59,16 +59,18 @@ export async function getMediatorsInCohortStage(
   experimentId: string,
   cohortId: string,
   stageId: string,
+  transaction?: FirebaseFirestore.Transaction,
 ): Promise<MediatorProfile[]> {
-  return (
-    await app
-      .firestore()
-      .collection('experiments')
-      .doc(experimentId)
-      .collection('mediators')
-      .where('currentCohortId', '==', cohortId)
-      .get()
-  ).docs
+  const collectionRef = app
+    .firestore()
+    .collection('experiments')
+    .doc(experimentId)
+    .collection('mediators')
+    .where('currentCohortId', '==', cohortId);
+  const snap = transaction
+    ? await transaction.get(collectionRef)
+    : await collectionRef.get();
+  return snap.docs
     .map((doc) => doc.data() as MediatorProfile)
     .filter((mediator) => mediator.activeStageMap[stageId]);
 }

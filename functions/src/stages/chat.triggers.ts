@@ -5,27 +5,18 @@ import {
   onDocumentWritten,
 } from 'firebase-functions/v2/firestore';
 import {
-  AgentChatResponse,
-  AgentConfig,
-  AgentGenerationConfig,
-  ChatMessage,
-  ChatMessageType,
-  ChatStageConfig,
   ChatStageParticipantAnswer,
-  ChatStagePublicData,
-  ParticipantStatus,
-  StageParticipantAnswer,
   StageKind,
-  awaitTypingDelay,
   createAgentChatPromptConfig,
   createChatStageParticipantAnswer,
   createMediatorChatMessage,
   createParticipantChatMessage,
-  getDefaultChatPrompt,
   getTimeElapsed,
-  getTypingDelayInMilliseconds,
-  structuredOutputEnabled,
   DEFAULT_AGENT_PARTICIPANT_CHAT_PROMPT,
+  ChatStagePublicData,
+  ParticipantProfileExtended,
+  StageConfig,
+  Experiment,
 } from '@deliberation-lab/utils';
 import {updateCurrentDiscussionIndex} from './chat.utils';
 import {getPastStagesPromptContext} from './stage.utils';
@@ -36,20 +27,20 @@ import {
   getFirestoreParticipant,
   getFirestoreParticipantRef,
   getFirestoreParticipantAnswer,
+  getFirestoreParticipantAnswerRef,
 } from '../utils/firestore';
 import {
   getAgentChatAPIResponse,
   getAgentChatPrompt,
   getChatMessages,
-  getChatMessageCount,
   getChatStage,
   getChatStagePublicData,
   hasEndedChat,
   sendAgentChatMessage,
 } from './chat.utils';
-import {getPastStagesPromptContext} from './stage.utils';
 
 import {app} from '../app';
+import {AgentPersonaType} from '@deliberation-lab/utils';
 
 // ************************************************************************* //
 // TRIGGER FUNCTIONS                                                         //
@@ -163,7 +154,7 @@ export const updateCurrentChatDiscussionId = onDocumentWritten(
     timeoutSeconds: 60,
   },
   async (event) => {
-    const data = event.data.after.data() as StageParticipantAnswer | undefined;
+    const data = event.data!.after.data() as ChatStageParticipantAnswer;
 
     const stageDocument = app
       .firestore()
@@ -200,7 +191,7 @@ export const updateCurrentChatDiscussionId = onDocumentWritten(
       // Update public stage data
       const publicStageData = (
         await publicDocument.get()
-      ).data() as StagePublicData;
+      ).data() as ChatStagePublicData;
       const discussionStatusMap = data.discussionTimestampMap;
 
       for (const discussionId of Object.keys(discussionStatusMap)) {
@@ -234,80 +225,91 @@ export const createAgentMessage = onDocumentCreated(
     timeoutSeconds: 60, // Maximum timeout of 1 minute for typing delay.
   },
   async (event) => {
-    const data = event.data?.data() as ChatMessage | undefined;
     const experimentId = event.params.experimentId;
     const cohortId = event.params.cohortId;
     const stageId = event.params.stageId;
 
-    // Use experiment config to get ChatStageConfig with agents.
-    const stage = await getChatStage(experimentId, stageId);
-    if (!stage) {
-      return;
-    }
+    await app.firestore().runTransaction(async (transaction) => {
+      // Use experiment config to get ChatStageConfig with agents.
+      const stage = await getChatStage(experimentId, stageId, transaction);
+      if (!stage) {
+        return;
+      }
 
-    const publicStageData = await getChatStagePublicData(
-      experimentId,
-      cohortId,
-      stageId,
-    );
-    // Make sure the conversation hasn't ended.
-    if (!publicStageData || Boolean(publicStageData.discussionEndTimestamp))
-      return;
-
-    // Use chats in collection to build chat history for prompt, get num chats
-    const chatMessages = await getChatMessages(experimentId, cohortId, stageId);
-
-    // Get mediators for current cohort and stage
-    const mediators = await getMediatorsInCohortStage(
-      experimentId,
-      cohortId,
-      stageId,
-    );
-
-    // For each active agent mediator, attempt to create/send chat response
-    mediators.forEach(async (mediator) => {
-      const promptConfig = await getAgentChatPrompt(
-        experimentId,
-        stageId,
-        mediator.agentConfig!.agentId,
-      );
-      if (!promptConfig) return null;
-      const response = await getAgentChatAPIResponse(
-        mediator, // profile
-        experimentId,
-        cohortId,
-        mediator.id,
-        '', // no past stage context
-        chatMessages,
-        mediator.agentConfig!,
-        promptConfig,
-        stage,
-      );
-      if (!response) return null;
-
-      // Build chat message to send
-      const explanation =
-        response.parsed[
-          response.promptConfig.structuredOutputConfig?.explanationField
-        ] ?? '';
-      const chatMessage = createMediatorChatMessage({
-        profile: response.profile,
-        discussionId: publicStageData.currentDiscussionId,
-        message: response.message,
-        timestamp: Timestamp.now(),
-        senderId: response.profileId,
-        agentId: response.agentId,
-        explanation,
-      });
-      sendAgentChatMessage(
-        chatMessage,
-        response,
-        chatMessages.length,
+      const publicStageData = await getChatStagePublicData(
         experimentId,
         cohortId,
         stageId,
-        event.params.chatId,
+        transaction,
       );
+      // Make sure the conversation hasn't ended.
+      if (!publicStageData || Boolean(publicStageData.discussionEndTimestamp))
+        return;
+
+      // Use chats in collection to build chat history for prompt, get num chats
+      const chatMessages = await getChatMessages(
+        experimentId,
+        cohortId,
+        stageId,
+        transaction,
+      );
+
+      // Get mediators for current cohort and stage
+      const mediators = await getMediatorsInCohortStage(
+        experimentId,
+        cohortId,
+        stageId,
+        transaction,
+      );
+
+      // For each active agent mediator, attempt to create/send chat response
+      for (const mediator of mediators) {
+        const promptConfig = await getAgentChatPrompt(
+          experimentId,
+          stageId,
+          mediator.agentConfig!.agentId,
+          transaction,
+        );
+        if (!promptConfig) continue;
+        const response = await getAgentChatAPIResponse(
+          mediator, // profile
+          experimentId,
+          cohortId,
+          mediator.id,
+          '', // no past stage context
+          chatMessages,
+          mediator.agentConfig!,
+          promptConfig,
+          stage,
+          transaction,
+        );
+        if (!response) continue;
+
+        // Build chat message to send
+        const explanation =
+          response.parsed[
+            response.promptConfig.structuredOutputConfig?.explanationField
+          ] ?? '';
+        const chatMessage = createMediatorChatMessage({
+          profile: response.profile,
+          discussionId: publicStageData.currentDiscussionId,
+          message: response.message,
+          timestamp: Timestamp.now(),
+          senderId: response.profileId,
+          agentId: response.agentId,
+          explanation,
+        });
+        await sendAgentChatMessage(
+          chatMessage,
+          response,
+          chatMessages.length,
+          experimentId,
+          cohortId,
+          stageId,
+          event.params.chatId,
+          transaction,
+        );
+      }
     });
   },
 );
@@ -320,94 +322,110 @@ export const createAgentParticipantMessage = onDocumentCreated(
     timeoutSeconds: 60, // Maximum timeout of 1 minute for typing delay.
   },
   async (event) => {
-    const data = event.data?.data() as ChatMessage | undefined;
     const experimentId = event.params.experimentId;
     const stageId = event.params.stageId;
     const cohortId = event.params.cohortId;
 
-    // Use experiment config to get ChatStageConfig with agents.
-    const stage = await getChatStage(experimentId, stageId);
-    if (!stage || stage.kind !== StageKind.CHAT) {
-      return;
-    }
+    await app.firestore().runTransaction(async (transaction) => {
+      // Use experiment config to get ChatStageConfig with agents.
+      const stage = await getChatStage(experimentId, stageId, transaction);
+      if (!stage || stage.kind !== StageKind.CHAT) {
+        return;
+      }
 
-    const publicStageData = await getChatStagePublicData(
-      experimentId,
-      cohortId,
-      stageId,
-    );
-    // Make sure the conversation hasn't ended.
-    if (!publicStageData || Boolean(publicStageData.discussionEndTimestamp))
-      return;
-
-    // Use chats in collection to build chat history for prompt, get num chats
-    const chatMessages = await getChatMessages(experimentId, cohortId, stageId);
-
-    // Get agent participants for current cohort and stage
-    const activeParticipants = await getFirestoreActiveParticipants(
-      experimentId,
-      cohortId,
-      stageId,
-      true, // must be agent
-    );
-
-    // For each active agent participant, attempt to create/send chat response
-    activeParticipants.forEach(async (participant) => {
-      const promptConfig =
-        (await getAgentChatPrompt(
-          experimentId,
-          stageId,
-          participant.agentConfig.agentId,
-        )) ??
-        createAgentChatPromptConfig(stageId, StageKind.CHAT, {
-          promptContext: DEFAULT_AGENT_PARTICIPANT_PROMPT,
-        });
-
-      const pastStageContext = promptConfig.promptSettings.includeStageHistory
-        ? await getPastStagesPromptContext(
-            experimentId,
-            stageId,
-            participant.privateId,
-            promptConfig.promptSettings.includeStageInfo,
-          )
-        : '';
-
-      const response = await getAgentChatAPIResponse(
-        participant, // profile
-        experimentId,
-        cohortId,
-        participant.publicId,
-        pastStageContext,
-        chatMessages,
-        participant.agentConfig,
-        promptConfig,
-        stage,
-      );
-      if (!response) return null;
-
-      // Build chat message to send
-      const explanation =
-        response.parsed[
-          response.promptConfig.structuredOutputConfig?.explanationField
-        ] ?? '';
-      const chatMessage = createParticipantChatMessage({
-        profile: response.profile,
-        discussionId: publicStageData.currentDiscussionId,
-        message: response.message,
-        timestamp: Timestamp.now(),
-        senderId: response.profileId,
-        agentId: response.agentId,
-        explanation,
-      });
-      sendAgentChatMessage(
-        chatMessage,
-        response,
-        chatMessages.length,
+      const publicStageData = await getChatStagePublicData(
         experimentId,
         cohortId,
         stageId,
-        event.params.chatId,
+        transaction,
       );
+      // Make sure the conversation hasn't ended.
+      if (!publicStageData || Boolean(publicStageData.discussionEndTimestamp))
+        return;
+
+      // Use chats in collection to build chat history for prompt, get num chats
+      const chatMessages = await getChatMessages(
+        experimentId,
+        cohortId,
+        stageId,
+        transaction,
+      );
+
+      // Get agent participants for current cohort and stage
+      const activeParticipants = await getFirestoreActiveParticipants(
+        experimentId,
+        cohortId,
+        stageId,
+        true, // must be agent
+        transaction,
+      );
+
+      // For each active agent participant, attempt to create/send chat response
+      for (const participant of activeParticipants) {
+        if (!participant.agentConfig) continue;
+        const promptConfig =
+          (await getAgentChatPrompt(
+            experimentId,
+            stageId,
+            participant.agentConfig.agentId,
+            transaction,
+          )) ??
+          createAgentChatPromptConfig(
+            stageId,
+            StageKind.CHAT,
+            AgentPersonaType.PARTICIPANT,
+            {promptContext: DEFAULT_AGENT_PARTICIPANT_CHAT_PROMPT},
+          );
+
+        const pastStageContext = promptConfig.promptSettings.includeStageHistory
+          ? await getPastStagesPromptContext(
+              experimentId,
+              stageId,
+              participant.privateId,
+              promptConfig.promptSettings.includeStageInfo,
+            )
+          : '';
+
+        const response = await getAgentChatAPIResponse(
+          participant, // profile
+          experimentId,
+          cohortId,
+          participant.publicId,
+          pastStageContext,
+          chatMessages,
+          participant.agentConfig,
+          promptConfig,
+          stage,
+          transaction,
+        );
+        if (!response) continue;
+
+        // Build chat message to send
+        const explanation =
+          response.parsed[
+            response.promptConfig.structuredOutputConfig?.explanationField
+          ] ?? '';
+        if (!publicStageData || !publicStageData.currentDiscussionId) continue;
+        const chatMessage = createParticipantChatMessage({
+          profile: response.profile,
+          discussionId: publicStageData.currentDiscussionId,
+          message: response.message,
+          timestamp: Timestamp.now(),
+          senderId: response.profileId,
+          agentId: response.agentId,
+          explanation,
+        });
+        await sendAgentChatMessage(
+          chatMessage,
+          response,
+          chatMessages.length,
+          experimentId,
+          cohortId,
+          stageId,
+          event.params.chatId,
+          transaction,
+        );
+      }
     });
   },
 );
@@ -422,8 +440,6 @@ export const checkReadyToEndChat = onDocumentCreated(
     timeoutSeconds: 60, // Maximum timeout of 1 minute for typing delay.
   },
   async (event) => {
-    const data = event.data?.data() as ChatMessage | undefined;
-
     await app.firestore().runTransaction(async (transaction) => {
       // Use experiment config to get ChatStageConfig with agents.
       // TODO: Add separate readyToEndChat trigger for other stages with chat
@@ -467,6 +483,7 @@ export const checkReadyToEndChat = onDocumentCreated(
       const promptConfig = createAgentChatPromptConfig(
         event.params.stageId,
         StageKind.CHAT,
+        AgentPersonaType.PARTICIPANT,
         {
           promptContext:
             'Are you ready to end the conversation and stop talking? Please consider whether you have met your goals and explicitly communicated this to other participants. If you have more to say or have yet to explicitly agree in the chat, you should not end the discussion yet. If so, respond the exact word YES. Otherwise, do not return anything.',
@@ -493,14 +510,6 @@ export const checkReadyToEndChat = onDocumentCreated(
               promptConfig.promptSettings.includeStageInfo,
             )
           : '';
-        const prompt = getDefaultChatPrompt(
-          participant,
-          participant.agentConfig!,
-          pastStageContext,
-          chatMessages,
-          promptConfig,
-          stage,
-        );
 
         const response = await getAgentChatAPIResponse(
           participant, // profile
@@ -524,9 +533,10 @@ export const checkReadyToEndChat = onDocumentCreated(
         // If threaded discussion (and not last thread), move to next thread
         if (
           stage.discussions.length > 0 &&
+          publicStageData &&
           publicStageData.currentDiscussionId &&
           publicStageData.currentDiscussionId !==
-            stage.discussions[stage.discussions.length - 1]
+            stage.discussions[stage.discussions.length - 1].id
         ) {
           const chatAnswer = await getFirestoreParticipantAnswer(
             event.params.experimentId,
@@ -547,6 +557,11 @@ export const checkReadyToEndChat = onDocumentCreated(
             participantAnswer.discussionTimestampMap[
               publicStageData.currentDiscussionId
             ] = Timestamp.now();
+            const participantAnswerDoc = getFirestoreParticipantAnswerRef(
+              event.params.experimentId,
+              participant.privateId,
+              event.params.stageId,
+            );
             await transaction.set(participantAnswerDoc, participantAnswer);
           }
         } else {
