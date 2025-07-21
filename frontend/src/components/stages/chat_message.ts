@@ -1,14 +1,11 @@
 import '../participant_profile/avatar_icon';
 
-import {observable} from 'mobx';
 import {MobxLitElement} from '@adobe/lit-mobx';
 
 import {CSSResultGroup, html, nothing} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
 import {unsafeHTML} from 'lit/directives/unsafe-html.js';
-
-import {Timestamp} from 'firebase/firestore';
 
 import {core} from '../../core/core';
 import {AuthService} from '../../services/auth.service';
