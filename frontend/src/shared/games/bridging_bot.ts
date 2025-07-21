@@ -273,8 +273,8 @@ const BBOT_DEBRIEF_TEXT = `**The study is now complete. Thank you for participat
 
 Abortion rights is an important policy issue. Here are some links to additional resources if you would like to learn more about different perspectives on this topic (links open in a new browser tab):
 
-- Pro-choice perspectives: [Center for Reproductive Rights resources & research](https://chatstudy.short.gy/center-for-reproductive-rights-research)
-- Pro-life perspectives: [National Right to Life fact sheet](https://chatstudy.short.gy/national-right-to-life)
+- Pro-choice perspectives: [Center for Reproductive Rights resources & research](https://linkly.link/2BtIu?i=crr_{{participantPrivateId}})
+- Pro-life perspectives: [National Right to Life fact sheet](https://linkly.link/2BtIp?i=nrl_{{participantPrivateId}})
 
 During your chat you were randomly assigned to a condition that involved either (a) no moderator message, (b) a standard pre-written message, or (c) a message written by an AI moderation system we are testing. The system is designed to help support constructive disagreement in online conversations. The goal of our study is to understand whether this form of moderation can improve the quality of text-based online conversations.
 

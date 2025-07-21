@@ -12,11 +12,15 @@ import {InfoStageConfig} from '@deliberation-lab/utils';
 import {unsafeHTML} from 'lit/directives/unsafe-html.js';
 import {convertMarkdownToHTML} from '../../shared/utils';
 import {styles} from './info_view.scss';
+import {core} from '../../core/core';
+import {ParticipantService} from '../../services/participant.service';
 
 /** Info stage view for participants. */
 @customElement('info-view')
 export class InfoView extends MobxLitElement {
   static override styles: CSSResultGroup = [styles];
+
+  private readonly participantService = core.getService(ParticipantService);
 
   @property() stage: InfoStageConfig | null = null;
 
@@ -25,7 +29,13 @@ export class InfoView extends MobxLitElement {
       return nothing;
     }
 
-    const infoLinesJoined = this.stage?.infoLines.join('\n\n');
+    const participantPrivateId =
+      this.participantService.profile?.privateId ?? '';
+    let infoLinesJoined = this.stage?.infoLines.join('\n\n') ?? '';
+    infoLinesJoined = infoLinesJoined.replaceAll(
+      '{{participantPrivateId}}',
+      participantPrivateId,
+    );
     return html`
       <stage-description .stage=${this.stage}></stage-description>
       <div class="html-wrapper">
