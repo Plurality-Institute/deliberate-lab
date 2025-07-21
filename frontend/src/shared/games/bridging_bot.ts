@@ -686,7 +686,9 @@ To start the conversation, please share a brief statement of your view on aborti
 
 After sending your first message, please read your partner's messages and continue the discussion.`;
 
-const STATIC_CHAT_MESSAGE = `Hi, {{participants}}. I think it is important to acknowledge that this is a complex and personal issue, and that people have different beliefs and values that inform their views on it. I hope we can have a productive conversation. Thank you, come again.`;
+const STATIC_CHAT_MESSAGE = `Hi {{participants}}, Bridging Bot here. I appreciate you both sharing your views on such a complex and personal topic.
+
+I wonder if you would each be open to sharing more about the experiences and values that have shaped your beliefs on this issue. Hearing more about this could lead to deeper understanding of where each of you is coming from.`;
 
 const BBOT_CHAT_STAGE = createChatStage({
   game: StageGame.BBOT,
