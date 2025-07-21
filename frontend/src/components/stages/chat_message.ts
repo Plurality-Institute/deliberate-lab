@@ -6,6 +6,7 @@ import {MobxLitElement} from '@adobe/lit-mobx';
 import {CSSResultGroup, html, nothing} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
+import {unsafeHTML} from 'lit/directives/unsafe-html.js';
 
 import {Timestamp} from 'firebase/firestore';
 
@@ -68,6 +69,11 @@ export class ChatMessageComponent extends MobxLitElement {
       );
     };
 
+    const message = chatMessage.message
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\n/g, '<br/>');
+
     return html`
       <div class=${classes}>
         <avatar-icon .emoji=${profile.avatar} .color=${color()}> </avatar-icon>
@@ -83,7 +89,7 @@ export class ChatMessageComponent extends MobxLitElement {
               )}</span
             >
           </div>
-          <div class="chat-bubble">${chatMessage.message}</div>
+          <div class="chat-bubble">${unsafeHTML(message)}</div>
         </div>
       </div>
     `;
@@ -91,6 +97,11 @@ export class ChatMessageComponent extends MobxLitElement {
 
   renderMediatorMessage(chatMessage: ChatMessage) {
     const profile = chatMessage.profile;
+
+    const message = chatMessage.message
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\n/g, '<br/>');
 
     return html`
       <div class="chat-message">
@@ -109,7 +120,7 @@ export class ChatMessageComponent extends MobxLitElement {
               )}</span
             >
           </div>
-          <div class="chat-bubble">${chatMessage.message}</div>
+          <div class="chat-bubble">${unsafeHTML(message)}</div>
           ${this.renderDebuggingExplanation(chatMessage)}
         </div>
       </div>

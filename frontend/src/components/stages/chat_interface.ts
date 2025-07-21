@@ -250,10 +250,12 @@ export class ChatInterface extends MobxLitElement {
 
   private renderInput() {
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'Enter') {
+      // Only send if Enter is pressed without Shift or Ctrl/Cmd
+      if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
         this.sendUserInput();
         e.stopPropagation();
       }
+      // Otherwise, allow default behavior (insert newline)
     };
 
     const handleInput = (e: Event) => {
