@@ -42,12 +42,16 @@ export async function getAgentResponse(
 ): Promise<ModelResponse> {
   let response;
 
-  const structuredOutputPrompt = structuredOutputConfig
-    ? makeStructuredOutputPrompt(structuredOutputConfig)
-    : '';
-  if (structuredOutputPrompt) {
-    prompt = `${prompt}\n${structuredOutputPrompt}`;
-  }
+  // This seems to be duplicated. Like the structuredOutputConfig gets
+  // added to the prompt in another place too, and then we have the json
+  // schema twice.
+  //
+  // const structuredOutputPrompt = structuredOutputConfig
+  //   ? makeStructuredOutputPrompt(structuredOutputConfig)
+  //   : '';
+  // if (structuredOutputPrompt) {
+  //   prompt = `${prompt}\n${structuredOutputPrompt}`;
+  // }
 
   if (modelSettings.apiType === ApiKeyType.GEMINI_API_KEY) {
     response = await getGeminiResponse(
