@@ -54,10 +54,11 @@ export function getBbotStageConfigs(): StageConfig[] {
   // Anonymized profiles
   stages.push(BBOT_PROFILE_STAGE);
 
-  // Pre-intervention surveys
-  stages.push(BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_PRE);
-
-  if (!SKIP_INITIAL_SURVEY) {
+  if (SKIP_INITIAL_SURVEY) {
+    stages.push(BBOT_PRE_CHAT_SURVEY_STAGE);
+  } else {
+    // Pre-intervention surveys
+    stages.push(BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_PRE);
     stages.push(BBOT_DEMOCRATIC_RECIPROCITY_SURVEY_STAGE_PRE);
     stages.push(BBOT_FEELING_THERMOMETER_SURVEY_STAGE_PRE);
   }
@@ -76,7 +77,6 @@ export function getBbotStageConfigs(): StageConfig[] {
   stages.push(BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_POST);
   stages.push(BBOT_DEMOCRATIC_RECIPROCITY_SURVEY_STAGE_POST);
   stages.push(BBOT_FEELING_THERMOMETER_SURVEY_STAGE_POST);
-  stages.push(BBOT_DEMOGRAPHIC_SURVEY_STAGE);
   // stages.push(BBOT_FEEDBACK_SURVEY_STAGE);
   stages.push(BBOT_DEBRIEF_STAGE);
 
@@ -273,8 +273,8 @@ const BBOT_DEBRIEF_TEXT = `**The study is now complete. Thank you for participat
 
 Abortion rights is an important policy issue. Here are some links to additional resources if you would like to learn more about different perspectives on this topic (links open in a new browser tab):
 
-- Pro-choice perspectives: [Center for Reproductive Rights resources & research](https://linkly.link/2BtIu?i=crr_{{participantPrivateId}})
-- Pro-life perspectives: [National Right to Life fact sheet](https://linkly.link/2BtIp?i=nrl_{{participantPrivateId}})
+- [Pro-choice resources](https://linkly.link/2BtIu?i=crr_{{participantPrivateId}})
+- [Pro-life resources](https://linkly.link/2BtIp?i=nrl_{{participantPrivateId}})
 
 During your chat you were randomly assigned to a condition that involved either (a) no moderator message, (b) a standard pre-written message, or (c) a message written by an AI moderation system we are testing. The system is designed to help support constructive disagreement in online conversations. The goal of our study is to understand whether this form of moderation can improve the quality of text-based online conversations.
 
@@ -295,64 +295,6 @@ const BBOT_PROFILE_STAGE = createProfileStage({
   }),
   game: StageGame.BBOT,
   profileType: ProfileType.ANONYMOUS_ANIMAL,
-});
-
-const BBOT_DEMOGRAPHIC_SURVEY_STAGE = createSurveyStage({
-  id: 'demographic_survey',
-  name: 'Demographic info',
-  game: StageGame.BBOT,
-  questions: [
-    createMultipleChoiceSurveyQuestion({
-      questionTitle: 'Are you currently able to become pregnant?',
-      options: createMultipleChoiceItems(['Yes', 'No', 'Prefer not to answer']),
-    }),
-
-    createMultipleChoiceSurveyQuestion({
-      questionTitle:
-        'What is the highest level of education you have completed?',
-      options: createMultipleChoiceItems([
-        'Less than high school',
-        'High school diploma or GED',
-        'Some college / Associate degree',
-        "Bachelor's degree",
-        'Graduate or professional degree',
-        'Prefer not to answer',
-      ]),
-    }),
-
-    // Moved to DEMOGRAPHIC_QUESTIONS below
-    // createMultipleChoiceSurveyQuestion({
-    //   questionTitle:
-    //     'Which of the following political parties do your views most align with?',
-    //   options: createMultipleChoiceItems([
-    //     'Democrat',
-    //     'Republican',
-    //     'Independent',
-    //     'Something else',
-    //     'Prefer not to answer',
-    //   ]),
-    // }),
-
-    // createMultipleChoiceSurveyQuestion({
-    //   questionTitle: 'What is your present religion, if any?',
-    //   options: createMultipleChoiceItems([
-    //     'Christianity (any tradition)',
-    //     'Judaism',
-    //     'Islam',
-    //     'Buddhism',
-    //     'Hinduism',
-    //     'Atheist / Agnostic / No religion in particular',
-    //     'Other religion or spiritual tradition',
-    //     'Prefer not to answer',
-    //   ]),
-    // }),
-
-    createMultipleChoiceSurveyQuestion({
-      questionTitle:
-        'Would you like to be involved in future studies that involve conversations with people who disagree with you about abortion rights?',
-      options: createMultipleChoiceItems(['Yes', 'No']),
-    }),
-  ],
 });
 
 // This is the question we use to match participants who disagree.
@@ -394,12 +336,27 @@ const DEMOGRAPHIC_QUESTIONS: SurveyQuestion[] = [
       'Prefer not to answer',
     ]),
   }),
+
+  createMultipleChoiceSurveyQuestion({
+    questionTitle: 'Are you currently able to become pregnant?',
+    options: createMultipleChoiceItems(['Yes', 'No', 'Prefer not to answer']),
+  }),
+
+  createMultipleChoiceSurveyQuestion({
+    questionTitle: 'What is the highest level of education you have completed?',
+    options: createMultipleChoiceItems([
+      'Less than high school',
+      'High school diploma or GED',
+      'Some college / Associate degree',
+      "Bachelor's degree",
+      'Graduate or professional degree',
+      'Prefer not to answer',
+    ]),
+  }),
 ];
 
 const BELIEF_QUESTIONS: SurveyQuestion[] = [
   SORTING_HAT_QUESTION,
-
-  ...DEMOGRAPHIC_QUESTIONS,
 
   createMultipleChoiceSurveyQuestion({
     questionTitle:
@@ -445,24 +402,19 @@ const BELIEF_QUESTIONS: SurveyQuestion[] = [
   }),
 ];
 
-let BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_PRE: SurveyStageConfig;
+const BBOT_PRE_CHAT_SURVEY_STAGE = createSurveyStage({
+  id: 'pre_chat_survey',
+  name: 'Pre-chat survey',
+  game: StageGame.BBOT,
+  questions: [SORTING_HAT_QUESTION, ...DEMOGRAPHIC_QUESTIONS],
+});
 
-if (SKIP_INITIAL_SURVEY) {
-  // If we are skipping the initial survey, ask only the sorting hat question.
-  BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_PRE = createSurveyStage({
-    id: 'reproductive_rights_survey_pre',
-    name: 'Beliefs about abortion',
-    game: StageGame.BBOT,
-    questions: [SORTING_HAT_QUESTION, ...DEMOGRAPHIC_QUESTIONS],
-  });
-} else {
-  BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_PRE = createSurveyStage({
-    id: 'reproductive_rights_survey_pre',
-    name: 'Beliefs about abortion',
-    game: StageGame.BBOT,
-    questions: BELIEF_QUESTIONS,
-  });
-}
+const BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_PRE = createSurveyStage({
+  id: 'reproductive_rights_survey_pre',
+  name: 'Beliefs about abortion',
+  game: StageGame.BBOT,
+  questions: [...BELIEF_QUESTIONS, ...DEMOGRAPHIC_QUESTIONS],
+});
 
 const BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_POST = createSurveyStage({
   id: 'reproductive_rights_survey_post',
@@ -526,7 +478,7 @@ const FEELING_THERMOMETER_SURVEY_CONFIG: Partial<SurveyStageConfig> = {
   questions: [
     createScaleSurveyQuestion({
       questionTitle:
-        'First, think about people who are have the same/similar beliefs as you when it comes to abortion rights. Using this thermometer, what number best describes your overall feelings toward these individuals?',
+        'First, think about people who believe abortion should be **legal** in all or most cases. Using this thermometer, what number best describes your overall feelings toward these individuals?',
       upperValue: 10,
       upperText: 'Warm, positive, or friendly',
       lowerValue: 0,
@@ -534,7 +486,7 @@ const FEELING_THERMOMETER_SURVEY_CONFIG: Partial<SurveyStageConfig> = {
     }),
     createScaleSurveyQuestion({
       questionTitle:
-        'Next, think about people who have opposite/different beliefs from you when it comes to abortion rights. Using this thermometer, what number best describes your overall feelings toward these individuals?',
+        'Next, think about people who believe abortion should be **illegal** in all or most cases. Using this thermometer, what number best describes your overall feelings toward these individuals?',
       upperValue: 10,
       upperText: 'Warm, positive, or friendly',
       lowerValue: 0,
@@ -647,6 +599,13 @@ const BBOT_CONVERSATION_QUALITY_SURVEY_STAGE = createSurveyStage({
 const BBOT_TRANSFER_TEXT =
   'Please wait while we match you with another conversation participant, and transfer you to the next phase of the experiment. This usually happens within 5 minutes. The delay has been accounted for in the total study time, so you will be paid for the time you spend waiting.';
 
+let SORTING_HAT_STAGE_ID: string;
+if (SKIP_INITIAL_SURVEY) {
+  SORTING_HAT_STAGE_ID = BBOT_PRE_CHAT_SURVEY_STAGE.id;
+} else {
+  SORTING_HAT_STAGE_ID = BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_PRE.id;
+}
+
 const BBOT_TRANSFER_STAGE = createTransferStage({
   id: 'participant_matching_transfer',
   name: 'Wait for other participants',
@@ -654,8 +613,8 @@ const BBOT_TRANSFER_STAGE = createTransferStage({
   enableTimeout: false,
   descriptions: createStageTextConfig({primaryText: BBOT_TRANSFER_TEXT}),
   enableSurveyMatching: true,
-  surveyStageId: 'reproductive_rights_survey_pre',
-  surveyQuestionId: 'abortion_policy_preference',
+  surveyStageId: SORTING_HAT_STAGE_ID,
+  surveyQuestionId: SORTING_HAT_QUESTION.id,
   participantCounts: {illegal: 1, legal: 1},
   newCohortParticipantConfig: createCohortParticipantConfig({
     maxParticipantsPerCohort: 2,
@@ -686,9 +645,11 @@ To start the conversation, please share a brief statement of your view on aborti
 
 After sending your first message, please read your partner's messages and continue the discussion.`;
 
-const STATIC_CHAT_MESSAGE = `Hi {{participants}}, Bridging Bot here. I appreciate you both sharing your views on such a complex and personal topic.
+const STATIC_CHAT_MESSAGE = `Hi, I'm Bridging Bot.
 
-I wonder if you would each be open to sharing more about the experiences and values that have shaped your beliefs on this issue. Hearing more about this could lead to deeper understanding of where each of you is coming from.`;
+{{participants}}, I appreciate you both sharing your views on such a complex and personal topic.
+
+I wonder if you would each be open to sharing more about the values and experiences that have shaped your thinking on this issue. Sometimes, talking about where your ideas come from can help deepen understanding, even if you don't end up agreeing.`;
 
 const BBOT_CHAT_STAGE = createChatStage({
   game: StageGame.BBOT,
@@ -714,7 +675,7 @@ const createBbotAgent = () => {
     isDefaultAddToCohort: true,
     defaultProfile: createParticipantProfileBase({
       name: 'BridgingBot',
-      avatar: '💁',
+      avatar: '🤖',
     }),
     defaultModelSettings: createAgentModelSettings({
       apiType: ApiKeyType.OPENAI_API_KEY,
