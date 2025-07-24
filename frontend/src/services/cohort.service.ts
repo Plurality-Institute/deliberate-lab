@@ -557,26 +557,22 @@ export class CohortService extends Service {
   @action
   unsubscribeAll() {
     this.unsubscribe.forEach((unsubscribe) => unsubscribe());
-    runInAction(() => {
-      this.unsubscribe = [];
-      // Reset stage configs
-      this.cohortConfig = null;
-      this.participantMap = {};
-      this.chatMap = {};
-      this.chatDiscussionMap = {};
-      this.chipLogMap = {};
-      this.transferParticipantMap = {};
-      this.stagePublicDataMap = {};
-      this.mediatorMap = {};
-    });
+    this.unsubscribe = [];
+    // Reset stage configs
+    this.cohortConfig = null;
+    this.participantMap = {};
+    this.chatMap = {};
+    this.chatDiscussionMap = {};
+    this.chipLogMap = {};
+    this.transferParticipantMap = {};
+    this.stagePublicDataMap = {};
+    this.mediatorMap = {};
   }
 
   @action
   reset() {
-    runInAction(() => {
-      this.cohortId = null;
-      this.experimentId = null;
-    });
+    this.cohortId = null;
+    this.experimentId = null;
     this.unsubscribeAll();
   }
 }

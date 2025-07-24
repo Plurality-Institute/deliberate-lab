@@ -205,25 +205,23 @@ export class ExperimentManager extends Service {
 
   @action
   reset() {
-    runInAction(() => {
-      this.experimentId = undefined;
-      this.cohortMap = {};
-      this.agentPersonaMap = {};
-      this.participantMap = {};
-      this.mediatorMap = {};
-      this.alertMap = {};
-      this.isEditing = false;
-      this.isEditingSettingsDialog = false;
-      this.currentParticipantId = undefined;
-      this.currentCohortId = undefined;
-      this.showCohortEditor = true;
-      this.showCohortList = true;
-      this.showParticipantStats = true;
-      this.showParticipantPreview = true;
-      this.hideLockedCohorts = false;
-      this.expandAllCohorts = true;
-      this.cohortEditing = undefined;
-    });
+    this.experimentId = undefined;
+    this.cohortMap = {};
+    this.agentPersonaMap = {};
+    this.participantMap = {};
+    this.mediatorMap = {};
+    this.alertMap = {};
+    this.isEditing = false;
+    this.isEditingSettingsDialog = false;
+    this.currentParticipantId = undefined;
+    this.currentCohortId = undefined;
+    this.showCohortEditor = true;
+    this.showCohortList = true;
+    this.showParticipantStats = true;
+    this.showParticipantPreview = true;
+    this.hideLockedCohorts = false;
+    this.expandAllCohorts = true;
+    this.cohortEditing = undefined;
     this.unsubscribeAll();
   }
 
