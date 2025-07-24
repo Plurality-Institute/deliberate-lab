@@ -78,7 +78,7 @@ export class Tooltip extends LitElement {
   }
 
   override firstUpdated() {
-    this.updatePosition();
+    requestAnimationFrame(() => this.updatePosition());
   }
 
   private updatePosition() {
@@ -86,44 +86,51 @@ export class Tooltip extends LitElement {
     if (!tooltip) return;
 
     const {width, height} = tooltip.getBoundingClientRect();
+    let left, right, top, bottom;
 
     if (this.position === 'TOP_START') {
-      this.left = 0;
-      this.bottom = height + this.positionOffset;
+      left = 0;
+      bottom = height + this.positionOffset;
     } else if (this.position === 'TOP_END') {
-      this.right = 0;
-      this.bottom = height + this.positionOffset;
+      right = 0;
+      bottom = height + this.positionOffset;
     } else if (this.position === 'BOTTOM_START') {
-      this.left = 0;
-      this.top = height + this.positionOffset;
+      left = 0;
+      top = height + this.positionOffset;
     } else if (this.position === 'BOTTOM_END') {
-      this.right = 0;
-      this.top = height + this.positionOffset;
+      right = 0;
+      top = height + this.positionOffset;
     } else if (this.position === 'LEFT_START') {
-      this.right = width + this.positionOffset;
-      this.top = 0;
+      right = width + this.positionOffset;
+      top = 0;
     } else if (this.position === 'LEFT_END') {
-      this.right = width + this.positionOffset;
-      this.bottom = 0;
+      right = width + this.positionOffset;
+      bottom = 0;
     } else if (this.position === 'RIGHT_START') {
-      this.left = width + this.positionOffset;
-      this.top = 0;
+      left = width + this.positionOffset;
+      top = 0;
     } else if (this.position === 'RIGHT_END') {
-      this.left = width + this.positionOffset;
-      this.bottom = 0;
+      left = width + this.positionOffset;
+      bottom = 0;
     } else if (this.position === 'TOP') {
-      this.left = width / 2;
-      this.bottom = height + this.positionOffset;
+      left = width / 2;
+      bottom = height + this.positionOffset;
     } else if (this.position === 'BOTTOM') {
-      this.top = height + this.positionOffset;
-      this.left = width / 2;
+      top = height + this.positionOffset;
+      left = width / 2;
     } else if (this.position === 'LEFT') {
-      this.right = width + this.positionOffset;
-      this.top = height / 2;
+      right = width + this.positionOffset;
+      top = height / 2;
     } else if (this.position === 'RIGHT') {
-      this.left = width + this.positionOffset;
-      this.top = height / 2;
+      left = width + this.positionOffset;
+      top = height / 2;
     }
+
+    // Only update state if changed
+    if (this.left !== left) this.left = left;
+    if (this.right !== right) this.right = right;
+    if (this.top !== top) this.top = top;
+    if (this.bottom !== bottom) this.bottom = bottom;
   }
 
   private getTooltipStyles() {
@@ -176,7 +183,7 @@ export class Tooltip extends LitElement {
       <div
         class=${tooltipClasses}
         @mouseenter=${() => {
-          this.updatePosition();
+          requestAnimationFrame(() => this.updatePosition());
         }}
         data-title=${this.text}
         style=${this.getTooltipStyles()}
