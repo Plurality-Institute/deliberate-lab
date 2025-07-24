@@ -1,4 +1,4 @@
-import {computed, makeObservable, observable} from 'mobx';
+import {computed, makeObservable, observable, action, runInAction} from 'mobx';
 import {
   collection,
   doc,
@@ -45,16 +45,20 @@ export class ExperimentService extends Service {
   }
 
   set isLoading(value: boolean) {
-    this.isExperimentLoading = value;
-    this.isStageConfigsLoading = value;
+    runInAction(() => {
+      this.isExperimentLoading = value;
+      this.isStageConfigsLoading = value;
+    });
   }
 
+  @action
   updateForRoute(experimentId: string) {
     if (experimentId !== this.experiment?.id) {
       this.loadExperiment(experimentId);
     }
   }
 
+  @action
   loadExperiment(id: string) {
     this.unsubscribeAll();
     this.isLoading = true;
@@ -64,12 +68,14 @@ export class ExperimentService extends Service {
       onSnapshot(
         doc(this.sp.firebaseService.firestore, 'experiments', id),
         (doc) => {
-          this.experiment = {
-            id: doc.id,
-            cohortLockMap: {}, // for experiments version <= 11
-            ...doc.data(),
-          } as Experiment;
-          this.isExperimentLoading = false;
+          runInAction(() => {
+            this.experiment = {
+              id: doc.id,
+              cohortLockMap: {}, // for experiments version <= 11
+              ...doc.data(),
+            } as Experiment;
+            this.isExperimentLoading = false;
+          });
         },
       ),
     );
@@ -84,22 +90,25 @@ export class ExperimentService extends Service {
           'stages',
         ),
         (snapshot) => {
-          let changedDocs = snapshot.docChanges().map((change) => change.doc);
-          if (changedDocs.length === 0) {
-            changedDocs = snapshot.docs;
-          }
+          runInAction(() => {
+            let changedDocs = snapshot.docChanges().map((change) => change.doc);
+            if (changedDocs.length === 0) {
+              changedDocs = snapshot.docs;
+            }
 
-          changedDocs.forEach((doc) => {
-            const data = doc.data() as StageConfig;
-            this.stageConfigMap[doc.id] = data;
+            changedDocs.forEach((doc) => {
+              const data = doc.data() as StageConfig;
+              this.stageConfigMap[doc.id] = data;
+            });
+
+            this.isStageConfigsLoading = false;
           });
-
-          this.isStageConfigsLoading = false;
         },
       ),
     );
   }
 
+  @action
   unsubscribeAll() {
     this.unsubscribe.forEach((unsubscribe) => unsubscribe());
     this.unsubscribe = [];
@@ -110,6 +119,7 @@ export class ExperimentService extends Service {
     this.sp.agentEditor.resetAgents();
   }
 
+  @action
   reset() {
     this.unsubscribeAll();
   }

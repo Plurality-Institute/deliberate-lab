@@ -1,4 +1,4 @@
-import {computed, makeObservable, observable} from 'mobx';
+import {computed, makeObservable, observable, action, runInAction} from 'mobx';
 import {
   Auth,
   onAuthStateChanged,
@@ -45,7 +45,9 @@ export class AuthService extends Service {
         if (user) {
           // User is signed in, see docs for a list of available properties
           // https://firebase.google.com/docs/reference/js/auth.user
-          this.user = user;
+          runInAction(() => {
+            this.user = user;
+          });
 
           const allowlistDoc = await getDoc(
             doc(
@@ -55,31 +57,35 @@ export class AuthService extends Service {
             ),
           );
 
-          if (allowlistDoc.exists()) {
-            this.isExperimenter = true;
-            this.subscribe();
-            this.writeExperimenterProfile(user);
-            this.sp.homeService.subscribe();
-            const experimentId = this.sp.experimentManager.experimentId;
-            if (experimentId) {
-              this.sp.experimentManager.loadExperimentData(experimentId);
-            }
+          runInAction(() => {
+            if (allowlistDoc.exists()) {
+              this.isExperimenter = true;
+              this.subscribe();
+              this.writeExperimenterProfile(user);
+              this.sp.homeService.subscribe();
+              const experimentId = this.sp.experimentManager.experimentId;
+              if (experimentId) {
+                this.sp.experimentManager.loadExperimentData(experimentId);
+              }
 
-            // Check if admin
-            if (allowlistDoc.data().isAdmin) {
-              this.sp.adminService.subscribe();
-              this.isAdmin = true;
+              // Check if admin
+              if (allowlistDoc.data().isAdmin) {
+                this.sp.adminService.subscribe();
+                this.isAdmin = true;
+              } else {
+                this.isAdmin = false;
+              }
             } else {
+              this.isExperimenter = false;
               this.isAdmin = false;
             }
-          } else {
-            this.isExperimenter = false;
-            this.isAdmin = false;
-          }
+          });
         } else {
           // User is signed out
-          this.user = null;
-          this.isExperimenter = null;
+          runInAction(() => {
+            this.user = null;
+            this.isExperimenter = null;
+          });
         }
       },
     );
@@ -118,10 +124,12 @@ export class AuthService extends Service {
     return this.isExperimenter && this.debugMode;
   }
 
+  @action
   setDebugMode(debugMode: boolean) {
     this.debugMode = debugMode;
   }
 
+  @action
   subscribe() {
     this.unsubscribeAll();
     this.isExperimentDataLoading = true;
@@ -136,29 +144,33 @@ export class AuthService extends Service {
           this.userEmail,
         ),
         (doc) => {
-          if (!doc.exists()) {
-            this.writeExperimenterData(
-              createExperimenterData(this.userId!, this.userEmail!),
-            );
-          } else {
-            const viewedExperiments: string[] = [];
-            this.experimenterData = {
-              viewedExperiments, // backwards compatibility
-              ...doc.data(),
-            } as ExperimenterData;
-          }
-          this.isExperimentDataLoading = false;
+          runInAction(() => {
+            if (!doc.exists()) {
+              this.writeExperimenterData(
+                createExperimenterData(this.userId!, this.userEmail!),
+              );
+            } else {
+              const viewedExperiments: string[] = [];
+              this.experimenterData = {
+                viewedExperiments, // backwards compatibility
+                ...doc.data(),
+              } as ExperimenterData;
+            }
+            this.isExperimentDataLoading = false;
+          });
         },
       ),
     );
   }
 
+  @action
   unsubscribeAll() {
     this.unsubscribe.forEach((unsubscribe) => unsubscribe());
     this.unsubscribe = [];
     this.experimenterData = null;
   }
 
+  @action
   setEditPermissions(canEdit: boolean) {
     this.canEdit = !this.isExperimenter ? false : canEdit;
   }

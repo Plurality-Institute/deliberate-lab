@@ -1,4 +1,4 @@
-import {computed, makeObservable, observable} from 'mobx';
+import {computed, makeObservable, observable, action, runInAction} from 'mobx';
 import {
   collection,
   onSnapshot,
@@ -131,9 +131,12 @@ export class ExperimentManager extends Service {
   // Copy of cohort being edited in settings dialog
   @observable cohortEditing: CohortConfig | undefined = undefined;
 
+  @action
   async setIsEditing(isEditing: boolean, saveChanges = false) {
     if (!isEditing) {
-      this.isEditing = false;
+      runInAction(() => {
+        this.isEditing = false;
+      });
       // If save changes, call updateExperiment
       if (saveChanges) {
         await this.sp.experimentEditor.updateExperiment();
@@ -163,13 +166,18 @@ export class ExperimentManager extends Service {
       }
 
       this.sp.experimentEditor.loadExperiment(experiment, stages);
-      this.isEditing = true;
+      runInAction(() => {
+        this.isEditing = true;
+      });
     }
   }
 
+  @action
   async setIsEditingSettingsDialog(isEditing: boolean, saveChanges = false) {
-    this.setIsEditing(isEditing, saveChanges);
-    this.isEditingSettingsDialog = isEditing;
+    await this.setIsEditing(isEditing, saveChanges);
+    runInAction(() => {
+      this.isEditingSettingsDialog = isEditing;
+    });
   }
 
   // Returns true if is creator OR admin
@@ -195,6 +203,28 @@ export class ExperimentManager extends Service {
     return this.isEditing && !this.isEditingSettingsDialog;
   }
 
+  @action
+  reset() {
+    this.experimentId = undefined;
+    this.cohortMap = {};
+    this.agentPersonaMap = {};
+    this.participantMap = {};
+    this.mediatorMap = {};
+    this.alertMap = {};
+    this.isEditing = false;
+    this.isEditingSettingsDialog = false;
+    this.currentParticipantId = undefined;
+    this.currentCohortId = undefined;
+    this.showCohortEditor = true;
+    this.showCohortList = true;
+    this.showParticipantStats = true;
+    this.showParticipantPreview = true;
+    this.hideLockedCohorts = false;
+    this.expandAllCohorts = true;
+    this.cohortEditing = undefined;
+    this.unsubscribeAll();
+  }
+
   getParticipantSearchResults(rawQuery: string) {
     const query = rawQuery.toLowerCase();
 
@@ -216,36 +246,43 @@ export class ExperimentManager extends Service {
     });
   }
 
+  @action
   setCohortEditing(cohort: CohortConfig | undefined) {
     this.cohortEditing = cohort;
   }
 
+  @action
   setShowCohortEditor(showCohortEditor: boolean) {
     this.showCohortEditor = showCohortEditor;
   }
 
+  @action
   setShowCohortList(showCohortList: boolean) {
     this.showCohortList = showCohortList;
   }
 
+  @action
   setShowParticipantPreview(showParticipantPreview: boolean) {
     this.showParticipantPreview = showParticipantPreview;
   }
 
+  @action
   setShowParticipantStats(showParticipantStats: boolean) {
     this.showParticipantStats = showParticipantStats;
   }
 
+  @action
   setHideLockedCohorts(hideLockedCohorts: boolean) {
     this.hideLockedCohorts = hideLockedCohorts;
   }
 
+  @action
   setExpandAllCohorts(expandAllCohorts: boolean) {
     this.expandAllCohorts = expandAllCohorts;
   }
 
+  @action
   setCurrentCohortId(id: string | undefined) {
-    console.log(id);
     this.currentCohortId = id;
   }
 
@@ -379,10 +416,12 @@ export class ExperimentManager extends Service {
   }
 
   set isLoading(value: boolean) {
-    this.isCohortsLoading = value;
-    this.isParticipantsLoading = value;
-    this.isMediatorsLoading = value;
-    this.isAgentsLoading = value;
+    runInAction(() => {
+      this.isCohortsLoading = value;
+      this.isParticipantsLoading = value;
+      this.isMediatorsLoading = value;
+      this.isAgentsLoading = value;
+    });
   }
 
   updateForRoute(experimentId: string) {
@@ -410,14 +449,16 @@ export class ExperimentManager extends Service {
           'alerts',
         ),
         (snapshot) => {
-          let changedDocs = snapshot.docChanges().map((change) => change.doc);
-          if (changedDocs.length === 0) {
-            changedDocs = snapshot.docs;
-          }
+          runInAction(() => {
+            let changedDocs = snapshot.docChanges().map((change) => change.doc);
+            if (changedDocs.length === 0) {
+              changedDocs = snapshot.docs;
+            }
 
-          changedDocs.forEach((doc) => {
-            const data = doc.data() as AlertMessage;
-            this.alertMap[data.id] = data;
+            changedDocs.forEach((doc) => {
+              const data = doc.data() as AlertMessage;
+              this.alertMap[data.id] = data;
+            });
           });
         },
       ),
@@ -433,17 +474,19 @@ export class ExperimentManager extends Service {
           'cohorts',
         ),
         (snapshot) => {
-          let changedDocs = snapshot.docChanges().map((change) => change.doc);
-          if (changedDocs.length === 0) {
-            changedDocs = snapshot.docs;
-          }
+          runInAction(() => {
+            let changedDocs = snapshot.docChanges().map((change) => change.doc);
+            if (changedDocs.length === 0) {
+              changedDocs = snapshot.docs;
+            }
 
-          changedDocs.forEach((doc) => {
-            const data = doc.data() as CohortConfig;
-            this.cohortMap[doc.id] = data;
+            changedDocs.forEach((doc) => {
+              const data = doc.data() as CohortConfig;
+              this.cohortMap[doc.id] = data;
+            });
+
+            this.isCohortsLoading = false;
           });
-
-          this.isCohortsLoading = false;
         },
       ),
     );
@@ -461,20 +504,22 @@ export class ExperimentManager extends Service {
           where('currentStatus', '!=', ParticipantStatus.DELETED),
         ),
         (snapshot) => {
-          let changedDocs = snapshot.docChanges().map((change) => change.doc);
-          if (changedDocs.length === 0) {
-            changedDocs = snapshot.docs;
-          }
+          runInAction(() => {
+            let changedDocs = snapshot.docChanges().map((change) => change.doc);
+            if (changedDocs.length === 0) {
+              changedDocs = snapshot.docs;
+            }
 
-          changedDocs.forEach((doc) => {
-            const data = {
-              agentConfig: null,
-              ...doc.data(),
-            } as ParticipantProfileExtended;
-            this.participantMap[doc.id] = data;
+            changedDocs.forEach((doc) => {
+              const data = {
+                agentConfig: null,
+                ...doc.data(),
+              } as ParticipantProfileExtended;
+              this.participantMap[doc.id] = data;
+            });
+
+            this.isParticipantsLoading = false;
           });
-
-          this.isParticipantsLoading = false;
         },
       ),
     );
@@ -492,20 +537,22 @@ export class ExperimentManager extends Service {
           where('currentStatus', '!=', ParticipantStatus.DELETED),
         ),
         (snapshot) => {
-          let changedDocs = snapshot.docChanges().map((change) => change.doc);
-          if (changedDocs.length === 0) {
-            changedDocs = snapshot.docs;
-          }
+          runInAction(() => {
+            let changedDocs = snapshot.docChanges().map((change) => change.doc);
+            if (changedDocs.length === 0) {
+              changedDocs = snapshot.docs;
+            }
 
-          changedDocs.forEach((doc) => {
-            const data = {
-              agentConfig: null,
-              ...doc.data(),
-            } as MediatorProfile;
-            this.mediatorMap[doc.id] = data;
+            changedDocs.forEach((doc) => {
+              const data = {
+                agentConfig: null,
+                ...doc.data(),
+              } as MediatorProfile;
+              this.mediatorMap[doc.id] = data;
+            });
+
+            this.isMediatorsLoading = false;
           });
-
-          this.isMediatorsLoading = false;
         },
       ),
     );
@@ -522,37 +569,34 @@ export class ExperimentManager extends Service {
           ),
         ),
         (snapshot) => {
-          let changedDocs = snapshot.docChanges().map((change) => change.doc);
-          if (changedDocs.length === 0) {
-            changedDocs = snapshot.docs;
-          }
+          runInAction(() => {
+            let changedDocs = snapshot.docChanges().map((change) => change.doc);
+            if (changedDocs.length === 0) {
+              changedDocs = snapshot.docs;
+            }
 
-          changedDocs.forEach((doc) => {
-            const data = doc.data() as AgentPersonaConfig;
-            this.agentPersonaMap[doc.id] = data;
+            changedDocs.forEach((doc) => {
+              const data = doc.data() as AgentPersonaConfig;
+              this.agentPersonaMap[doc.id] = data;
+            });
+
+            this.isAgentsLoading = false;
           });
-
-          this.isAgentsLoading = false;
         },
       ),
     );
   }
 
+  @action
   unsubscribeAll() {
     this.unsubscribe.forEach((unsubscribe) => unsubscribe());
     this.unsubscribe = [];
-
     // Reset experiment data
     this.cohortMap = {};
     this.participantMap = {};
     this.mediatorMap = {};
     this.agentPersonaMap = {};
     this.alertMap = {};
-  }
-
-  reset() {
-    this.experimentId = undefined;
-    this.unsubscribeAll();
   }
 
   // *********************************************************************** //
@@ -644,6 +688,7 @@ export class ExperimentManager extends Service {
   /** Create a new cohort
    * @rights Experimenter
    */
+  @action
   async createCohort(config: Partial<CohortConfig> = {}, name = '') {
     if (!this.sp.experimentService.experiment) return;
 
@@ -670,6 +715,7 @@ export class ExperimentManager extends Service {
   /** Update existing cohort metadata
    * @rights Experimenter
    */
+  @action
   async updateCohortMetadata(
     cohortId: string,
     metadata: MetadataConfig,
@@ -698,6 +744,7 @@ export class ExperimentManager extends Service {
   }
 
   /** Create human participant. */
+  @action
   async createParticipant(
     cohortId: string,
     prolificId?: string,
@@ -735,6 +782,7 @@ export class ExperimentManager extends Service {
   }
 
   /** Create agent participant. */
+  @action
   async createAgentParticipant(
     cohortId: string,
     agentConfig: ProfileAgentConfig,

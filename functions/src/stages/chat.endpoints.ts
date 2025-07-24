@@ -1,12 +1,5 @@
 import {Value} from '@sinclair/typebox/value';
-import {
-  ChatStageConfig,
-  ChatStageParticipantAnswer,
-  CreateChatMessageData,
-  StageConfig,
-  StageKind,
-  UpdateChatStageParticipantAnswerData,
-} from '@deliberation-lab/utils';
+import {UpdateChatStageParticipantAnswerData} from '@deliberation-lab/utils';
 import {Timestamp} from 'firebase-admin/firestore';
 import * as functions from 'firebase-functions';
 import {onCall} from 'firebase-functions/v2/https';
@@ -47,12 +40,9 @@ export const createChatMessage = onCall(async (request) => {
 
   const chatMessage = {...data.chatMessage, timestamp: Timestamp.now()};
 
-  // Run document write as transaction to ensure consistency
-  await app.firestore().runTransaction(async (transaction) => {
-    // Add chat message
-    // (see chat.triggers for auto-generated agent responses)
-    transaction.set(document, chatMessage);
-  });
+  // nb: this was in a transaction, but it is not necessary here as
+  // we are not reading any data before writing.
+  await document.set(chatMessage);
 
   return {id: document.id};
 });

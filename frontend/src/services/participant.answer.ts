@@ -1,4 +1,4 @@
-import {computed, makeObservable, observable} from 'mobx';
+import {computed, makeObservable, observable, action, runInAction} from 'mobx';
 import {FirebaseService} from './firebase.service';
 import {Service} from './service';
 import {ExperimentService} from './experiment.service';
@@ -61,7 +61,9 @@ export class ParticipantAnswerService extends Service {
   }
 
   set isLoading(value: boolean) {
-    this.areAnswersLoading = value;
+    runInAction(() => {
+      this.areAnswersLoading = value;
+    });
   }
 
   getRankingList(stageId: string) {
@@ -89,26 +91,31 @@ export class ParticipantAnswerService extends Service {
       : undefined;
   }
 
+  @action
   setIds(experimentId: string, participantId: string) {
     this.experimentId = experimentId;
     this.participantId = participantId;
   }
 
+  @action
   reset() {
     this.experimentId = null;
     this.participantId = null;
     this.resetData();
   }
 
+  @action
   resetData() {
     this.answerMap = {};
     this.profile = null;
   }
 
+  @action
   setProfile(profile: ParticipantProfileBase) {
     this.profile = profile;
   }
 
+  @action
   addAnswer(stageId: string, answer: StageParticipantAnswer) {
     this.areAnswersLoading = true;
     this.answerMap[stageId] = answer;
@@ -139,6 +146,7 @@ export class ParticipantAnswerService extends Service {
     return answerMap[questionId];
   }
 
+  @action
   updateComprehensionAnswer(
     stageId: string,
     questionId: string,
@@ -193,6 +201,7 @@ export class ParticipantAnswerService extends Service {
     return Object.keys(answer.answerMap[participantId]);
   }
 
+  @action
   updateChatInput(stageId: string, chatInput: string) {
     this.chatInputMap[stageId] = chatInput;
   }
@@ -206,6 +215,7 @@ export class ParticipantAnswerService extends Service {
     this.profile = {...this.profile, ...config};
   }
 
+  @action
   updateRankingAnswer(stageId: string, rankingList: string[]) {
     const answer: RankingStageParticipantAnswer =
       createRankingStageParticipantAnswer({id: stageId});
@@ -213,6 +223,7 @@ export class ParticipantAnswerService extends Service {
     this.answerMap[stageId] = answer;
   }
 
+  @action
   updateSurveyAnswer(stageId: string, surveyAnswer: SurveyAnswer) {
     let answer = this.answerMap[stageId];
     if (!answer || answer.kind !== StageKind.SURVEY) {
@@ -223,6 +234,7 @@ export class ParticipantAnswerService extends Service {
     this.answerMap[stageId] = answer;
   }
 
+  @action
   updateSurveyPerParticipantAnswer(
     stageId: string,
     surveyAnswer: SurveyAnswer,

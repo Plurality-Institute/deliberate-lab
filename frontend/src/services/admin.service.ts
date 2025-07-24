@@ -17,7 +17,7 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import {computed, makeObservable, observable} from 'mobx';
+import {computed, makeObservable, observable, action, runInAction} from 'mobx';
 
 import {AuthService} from './auth.service';
 import {FirebaseService} from './firebase.service';
@@ -49,6 +49,7 @@ export class AdminService extends Service {
     return this.areExperimentsLoading || this.isAllowlistLoading;
   }
 
+  @action
   subscribe() {
     this.unsubscribeAll();
 
@@ -61,14 +62,15 @@ export class AdminService extends Service {
       onSnapshot(
         allowlistQuery,
         (snapshot) => {
-          this.experimenters = snapshot.docs.map((doc) =>
-            getFullExperimenterConfig({
-              ...doc.data(),
-              email: doc.id,
-            } as Partial<ExperimenterProfileExtended>),
-          );
-
-          this.isAllowlistLoading = false;
+          runInAction(() => {
+            this.experimenters = snapshot.docs.map((doc) =>
+              getFullExperimenterConfig({
+                ...doc.data(),
+                email: doc.id,
+              } as Partial<ExperimenterProfileExtended>),
+            );
+            this.isAllowlistLoading = false;
+          });
         },
         (error) => {
           console.log(error);
@@ -83,16 +85,18 @@ export class AdminService extends Service {
     );
     this.unsubscribe.push(
       onSnapshot(experimentQuery, (snapshot) => {
-        this.experiments = collectSnapshotWithId<Experiment>(snapshot, 'id');
-        this.areExperimentsLoading = false;
+        runInAction(() => {
+          this.experiments = collectSnapshotWithId<Experiment>(snapshot, 'id');
+          this.areExperimentsLoading = false;
+        });
       }),
     );
   }
 
+  @action
   unsubscribeAll() {
     this.unsubscribe.forEach((unsubscribe) => unsubscribe());
     this.unsubscribe = [];
-
     // Reset observables
     this.experiments = [];
     this.experimenters = [];
