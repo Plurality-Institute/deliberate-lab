@@ -119,13 +119,11 @@ export class HomeService extends Service {
   @action
   unsubscribeAll() {
     this.unsubscribe.forEach((unsubscribe) => unsubscribe());
-    runInAction(() => {
-      this.unsubscribe = [];
-      // Reset observables
-      this.experiments = [];
-      this.experimenterMap = {};
-      this.experimentTemplates = [];
-    });
+    this.unsubscribe = [];
+    // Reset observables
+    this.experiments = [];
+    this.experimenterMap = {};
+    this.experimentTemplates = [];
   }
 
   getExperiment(experimentId: string) {

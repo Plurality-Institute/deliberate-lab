@@ -96,12 +96,10 @@ export class AdminService extends Service {
   @action
   unsubscribeAll() {
     this.unsubscribe.forEach((unsubscribe) => unsubscribe());
-    runInAction(() => {
-      this.unsubscribe = [];
-      // Reset observables
-      this.experiments = [];
-      this.experimenters = [];
-    });
+    this.unsubscribe = [];
+    // Reset observables
+    this.experiments = [];
+    this.experimenters = [];
   }
 
   getExperiment(experimentId: string) {

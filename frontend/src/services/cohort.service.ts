@@ -260,11 +260,9 @@ export class CohortService extends Service {
       return;
     }
 
-    runInAction(() => {
-      this.experimentId = experimentId;
-      this.isLoading = true;
-      this.cohortId = id;
-    });
+    this.experimentId = experimentId;
+    this.isLoading = true;
+    this.cohortId = id;
     this.unsubscribeAll();
 
     // Subscribe to data
