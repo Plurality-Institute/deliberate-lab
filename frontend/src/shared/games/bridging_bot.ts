@@ -696,7 +696,7 @@ const createBbotAgent = () => {
         includeStageInfo: false, // Do not include the chat description, since it could be confusing
       }),
       chatSettings: createAgentChatSettings({
-        wordsPerMinute: 300,
+        wordsPerMinute: 700,
         minMessagesBeforeResponding: 5,
         canSelfTriggerCalls: false,
         maxResponses: 1,
