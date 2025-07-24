@@ -1,4 +1,4 @@
-import {action, computed, makeObservable, observable} from 'mobx';
+import {action, computed, makeObservable, observable, runInAction} from 'mobx';
 import {Service} from './service';
 
 import {ColorMode} from '../shared/types';
@@ -15,6 +15,8 @@ export class SettingsService extends Service {
   @observable colorMode: ColorMode = ColorMode.DEFAULT;
 
   @action setColorMode(colorMode: ColorMode) {
-    this.colorMode = colorMode;
+    runInAction(() => {
+      this.colorMode = colorMode;
+    });
   }
 }

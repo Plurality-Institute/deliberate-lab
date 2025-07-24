@@ -1,4 +1,4 @@
-import {observable} from 'mobx';
+import {observable, action, runInAction} from 'mobx';
 
 import {AnalyticsService} from './analytics.service';
 import {FirebaseService} from './firebase.service';
@@ -18,11 +18,14 @@ export class InitializationService extends Service {
 
   @observable isAppInitialized = false;
 
+  @action
   override async initialize() {
     this.sp.analyticsService.initialize();
     this.sp.firebaseService.initialize();
     this.sp.routerService.initialize();
 
-    this.isAppInitialized = true;
+    runInAction(() => {
+      this.isAppInitialized = true;
+    });
   }
 }

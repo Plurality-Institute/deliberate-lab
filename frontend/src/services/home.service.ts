@@ -16,7 +16,7 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import {computed, makeObservable, observable} from 'mobx';
+import {computed, makeObservable, observable, action, runInAction} from 'mobx';
 
 import {AuthService} from './auth.service';
 import {FirebaseService} from './firebase.service';
@@ -57,6 +57,7 @@ export class HomeService extends Service {
     return this.areExperimentsLoading || this.areExperimentTemplatesLoading;
   }
 
+  @action
   subscribe() {
     this.unsubscribeAll();
 
@@ -65,13 +66,15 @@ export class HomeService extends Service {
       onSnapshot(
         collection(this.sp.firebaseService.firestore, 'experimenters'),
         (snapshot) => {
-          let changedDocs = snapshot.docChanges().map((change) => change.doc);
-          if (changedDocs.length === 0) {
-            changedDocs = snapshot.docs;
-          }
+          runInAction(() => {
+            let changedDocs = snapshot.docChanges().map((change) => change.doc);
+            if (changedDocs.length === 0) {
+              changedDocs = snapshot.docs;
+            }
 
-          changedDocs.forEach((doc) => {
-            this.experimenterMap[doc.id] = doc.data() as ExperimenterProfile;
+            changedDocs.forEach((doc) => {
+              this.experimenterMap[doc.id] = doc.data() as ExperimenterProfile;
+            });
           });
         },
       ),
@@ -88,8 +91,10 @@ export class HomeService extends Service {
 
     this.unsubscribe.push(
       onSnapshot(experimentQuery, (snapshot) => {
-        this.experiments = collectSnapshotWithId<Experiment>(snapshot, 'id');
-        this.areExperimentsLoading = false;
+        runInAction(() => {
+          this.experiments = collectSnapshotWithId<Experiment>(snapshot, 'id');
+          this.areExperimentsLoading = false;
+        });
       }),
     );
 
@@ -100,23 +105,27 @@ export class HomeService extends Service {
     );
     this.unsubscribe.push(
       onSnapshot(experimentTemplateQuery, (snapshot) => {
-        this.experimentTemplates = collectSnapshotWithId<Experiment>(
-          snapshot,
-          'id',
-        );
-        this.areExperimentTemplatesLoading = false;
+        runInAction(() => {
+          this.experimentTemplates = collectSnapshotWithId<Experiment>(
+            snapshot,
+            'id',
+          );
+          this.areExperimentTemplatesLoading = false;
+        });
       }),
     );
   }
 
+  @action
   unsubscribeAll() {
     this.unsubscribe.forEach((unsubscribe) => unsubscribe());
-    this.unsubscribe = [];
-
-    // Reset observables
-    this.experiments = [];
-    this.experimenterMap = {};
-    this.experimentTemplates = [];
+    runInAction(() => {
+      this.unsubscribe = [];
+      // Reset observables
+      this.experiments = [];
+      this.experimenterMap = {};
+      this.experimentTemplates = [];
+    });
   }
 
   getExperiment(experimentId: string) {
@@ -131,6 +140,7 @@ export class HomeService extends Service {
     return this.experimenterMap[experimenterId]?.name ?? experimenterId;
   }
 
+  @action
   setShowMyExperiments(showMyExperiments: boolean) {
     this.showMyExperiments = showMyExperiments;
   }

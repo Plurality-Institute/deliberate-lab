@@ -1,4 +1,4 @@
-import {computed, makeObservable, observable} from 'mobx';
+import {computed, makeObservable, observable, action, runInAction} from 'mobx';
 import {
   collection,
   doc,
@@ -97,11 +97,13 @@ export class CohortService extends Service {
   }
 
   set isLoading(value: boolean) {
-    this.isParticipantsLoading = value;
-    this.isStageDataLoading = value;
-    this.isChatLoading = value;
-    this.isChipLoading = value;
-    this.isMediatorsLoading = value;
+    runInAction(() => {
+      this.isParticipantsLoading = value;
+      this.isStageDataLoading = value;
+      this.isChatLoading = value;
+      this.isChipLoading = value;
+      this.isMediatorsLoading = value;
+    });
   }
 
   // Returns mediators that are active in the given stage
@@ -252,14 +254,17 @@ export class CohortService extends Service {
 
   // Called from participant service on participant snapshot listener
   // (i.e., when participant's current cohort may have changed)
+  @action
   async loadCohortData(experimentId: string, id: string) {
     if (id === this.cohortId) {
       return;
     }
 
-    this.experimentId = experimentId;
-    this.isLoading = true;
-    this.cohortId = id;
+    runInAction(() => {
+      this.experimentId = experimentId;
+      this.isLoading = true;
+      this.cohortId = id;
+    });
     this.unsubscribeAll();
 
     // Subscribe to data
@@ -286,11 +291,13 @@ export class CohortService extends Service {
           this.cohortId,
         ),
         async (doc) => {
-          this.cohortConfig = {
-            stageUnlockMap: {}, // for backwards compatibility
-            ...doc.data(),
-          } as CohortConfig;
-          this.isCohortConfigLoading = false;
+          runInAction(() => {
+            this.cohortConfig = {
+              stageUnlockMap: {}, // for backwards compatibility
+              ...doc.data(),
+            } as CohortConfig;
+            this.isCohortConfigLoading = false;
+          });
         },
       ),
     );
@@ -312,15 +319,17 @@ export class CohortService extends Service {
           'publicStageData',
         ),
         (snapshot) => {
-          let changedDocs = snapshot.docChanges().map((change) => change.doc);
-          if (changedDocs.length === 0) {
-            changedDocs = snapshot.docs;
-          }
+          runInAction(() => {
+            let changedDocs = snapshot.docChanges().map((change) => change.doc);
+            if (changedDocs.length === 0) {
+              changedDocs = snapshot.docs;
+            }
 
-          changedDocs.forEach((doc) => {
-            this.stagePublicDataMap[doc.id] = doc.data() as StagePublicData;
+            changedDocs.forEach((doc) => {
+              this.stagePublicDataMap[doc.id] = doc.data() as StagePublicData;
+            });
+            this.isStageDataLoading = false;
           });
-          this.isStageDataLoading = false;
         },
       ),
     );
@@ -342,7 +351,9 @@ export class CohortService extends Service {
     const experimentData = experimentSnap.data();
     if (experimentData?.stageIds.length === 0) return;
 
-    this.isChipLoading = true;
+    runInAction(() => {
+      this.isChipLoading = true;
+    });
     for (const stageId of experimentData.stageIds) {
       this.unsubscribe.push(
         onSnapshot(
@@ -365,14 +376,16 @@ export class CohortService extends Service {
               changedDocs = snapshot.docs;
             }
 
-            changedDocs.forEach((doc) => {
-              if (!this.chipLogMap[stageId]) {
-                this.chipLogMap[stageId] = [];
-              }
-              const chipLogEntry = doc.data() as ChipLogEntry;
-              this.chipLogMap[stageId].push(chipLogEntry);
+            runInAction(() => {
+              changedDocs.forEach((doc) => {
+                if (!this.chipLogMap[stageId]) {
+                  this.chipLogMap[stageId] = [];
+                }
+                const chipLogEntry = doc.data() as ChipLogEntry;
+                this.chipLogMap[stageId].push(chipLogEntry);
+              });
+              this.isChipLoading = false;
             });
-            this.isChipLoading = false;
           },
         ),
       );
@@ -395,7 +408,9 @@ export class CohortService extends Service {
     const experimentData = experimentSnap.data();
     if (experimentData?.stageIds.length === 0) return;
 
-    this.isChatLoading = true;
+    runInAction(() => {
+      this.isChatLoading = true;
+    });
     for (const stageId of experimentData.stageIds) {
       this.unsubscribe.push(
         onSnapshot(
@@ -418,31 +433,33 @@ export class CohortService extends Service {
               changedDocs = snapshot.docs;
             }
 
-            changedDocs.forEach((doc) => {
-              if (!this.chatMap[stageId]) {
-                this.chatMap[stageId] = [];
-              }
-              if (!this.chatDiscussionMap[stageId]) {
-                this.chatDiscussionMap[stageId] = {};
-              }
-              const message = {
-                senderId: doc.data().participantPublicId ?? '', // backwards compatibility pre version 16
-                agentId: '', // backwards compatibility pre version 16
-                explanation: '', // backwards compatibility pre version 16
-                ...doc.data(),
-              } as ChatMessage;
-              if (!message.discussionId) {
-                this.chatMap[stageId].push(message);
-              } else {
-                if (!this.chatDiscussionMap[stageId][message.discussionId]) {
-                  this.chatDiscussionMap[stageId][message.discussionId] = [];
+            runInAction(() => {
+              changedDocs.forEach((doc) => {
+                if (!this.chatMap[stageId]) {
+                  this.chatMap[stageId] = [];
                 }
-                this.chatDiscussionMap[stageId][message.discussionId].push(
-                  message,
-                );
-              }
+                if (!this.chatDiscussionMap[stageId]) {
+                  this.chatDiscussionMap[stageId] = {};
+                }
+                const message = {
+                  senderId: doc.data().participantPublicId ?? '', // backwards compatibility pre version 16
+                  agentId: '', // backwards compatibility pre version 16
+                  explanation: '', // backwards compatibility pre version 16
+                  ...doc.data(),
+                } as ChatMessage;
+                if (!message.discussionId) {
+                  this.chatMap[stageId].push(message);
+                } else {
+                  if (!this.chatDiscussionMap[stageId][message.discussionId]) {
+                    this.chatDiscussionMap[stageId][message.discussionId] = [];
+                  }
+                  this.chatDiscussionMap[stageId][message.discussionId].push(
+                    message,
+                  );
+                }
+              });
+              this.isChatLoading = false;
             });
-            this.isChatLoading = false;
           },
         ),
       );
@@ -453,11 +470,12 @@ export class CohortService extends Service {
   private loadParticipantProfiles() {
     if (!this.experimentId || !this.cohortId) return;
 
-    this.isParticipantsLoading = true;
-
-    // Clear participant maps before repopulating
-    this.participantMap = {};
-    this.transferParticipantMap = {};
+    runInAction(() => {
+      this.isParticipantsLoading = true;
+      // Clear participant maps before repopulating
+      this.participantMap = {};
+      this.transferParticipantMap = {};
+    });
 
     // TODO: Use participantPublicData collection once available
     // so that privateIds are not surfaced
@@ -481,16 +499,18 @@ export class CohortService extends Service {
             changedDocs = snapshot.docs;
           }
 
-          changedDocs.forEach((doc) => {
-            const profile = doc.data() as ParticipantProfile;
-            if (profile.currentCohortId === this.cohortId) {
-              this.participantMap[profile.publicId] = profile;
-              delete this.transferParticipantMap[profile.publicId];
-            } else if (profile.transferCohortId === this.cohortId) {
-              this.transferParticipantMap[profile.publicId] = profile;
-            }
+          runInAction(() => {
+            changedDocs.forEach((doc) => {
+              const profile = doc.data() as ParticipantProfile;
+              if (profile.currentCohortId === this.cohortId) {
+                this.participantMap[profile.publicId] = profile;
+                delete this.transferParticipantMap[profile.publicId];
+              } else if (profile.transferCohortId === this.cohortId) {
+                this.transferParticipantMap[profile.publicId] = profile;
+              }
+            });
+            this.isParticipantsLoading = false;
           });
-          this.isParticipantsLoading = false;
         },
       ),
     );
@@ -499,10 +519,11 @@ export class CohortService extends Service {
   loadMediatorProfiles() {
     if (!this.experimentId || !this.cohortId) return;
 
-    this.isMediatorsLoading = true;
-
-    // Clear mediator map before repopulating
-    this.mediatorMap = {};
+    runInAction(() => {
+      this.isMediatorsLoading = true;
+      // Clear mediator map before repopulating
+      this.mediatorMap = {};
+    });
 
     // TODO: Use mediatorPublicData collection once available
     // so that agent configs are not surfaced
@@ -523,34 +544,41 @@ export class CohortService extends Service {
             changedDocs = snapshot.docs;
           }
 
-          changedDocs.forEach((doc) => {
-            const profile = doc.data() as MediatorProfile;
-            this.mediatorMap[profile.id] = profile;
+          runInAction(() => {
+            changedDocs.forEach((doc) => {
+              const profile = doc.data() as MediatorProfile;
+              this.mediatorMap[profile.id] = profile;
+            });
+            this.isMediatorsLoading = false;
           });
-          this.isMediatorsLoading = false;
         },
       ),
     );
   }
 
+  @action
   unsubscribeAll() {
     this.unsubscribe.forEach((unsubscribe) => unsubscribe());
-    this.unsubscribe = [];
-
-    // Reset stage configs
-    this.cohortConfig = null;
-    this.participantMap = {};
-    this.chatMap = {};
-    this.chatDiscussionMap = {};
-    this.chipLogMap = {};
-    this.transferParticipantMap = {};
-    this.stagePublicDataMap = {};
-    this.mediatorMap = {};
+    runInAction(() => {
+      this.unsubscribe = [];
+      // Reset stage configs
+      this.cohortConfig = null;
+      this.participantMap = {};
+      this.chatMap = {};
+      this.chatDiscussionMap = {};
+      this.chipLogMap = {};
+      this.transferParticipantMap = {};
+      this.stagePublicDataMap = {};
+      this.mediatorMap = {};
+    });
   }
 
+  @action
   reset() {
-    this.cohortId = null;
-    this.experimentId = null;
+    runInAction(() => {
+      this.cohortId = null;
+      this.experimentId = null;
+    });
     this.unsubscribeAll();
   }
 }

@@ -1,4 +1,4 @@
-import {computed, makeObservable, observable} from 'mobx';
+import {computed, makeObservable, observable, action, runInAction} from 'mobx';
 import {
   collection,
   onSnapshot,
@@ -131,9 +131,12 @@ export class ExperimentManager extends Service {
   // Copy of cohort being edited in settings dialog
   @observable cohortEditing: CohortConfig | undefined = undefined;
 
+  @action
   async setIsEditing(isEditing: boolean, saveChanges = false) {
     if (!isEditing) {
-      this.isEditing = false;
+      runInAction(() => {
+        this.isEditing = false;
+      });
       // If save changes, call updateExperiment
       if (saveChanges) {
         await this.sp.experimentEditor.updateExperiment();
@@ -163,13 +166,18 @@ export class ExperimentManager extends Service {
       }
 
       this.sp.experimentEditor.loadExperiment(experiment, stages);
-      this.isEditing = true;
+      runInAction(() => {
+        this.isEditing = true;
+      });
     }
   }
 
+  @action
   async setIsEditingSettingsDialog(isEditing: boolean, saveChanges = false) {
-    this.setIsEditing(isEditing, saveChanges);
-    this.isEditingSettingsDialog = isEditing;
+    await this.setIsEditing(isEditing, saveChanges);
+    runInAction(() => {
+      this.isEditingSettingsDialog = isEditing;
+    });
   }
 
   // Returns true if is creator OR admin
@@ -195,6 +203,30 @@ export class ExperimentManager extends Service {
     return this.isEditing && !this.isEditingSettingsDialog;
   }
 
+  @action
+  reset() {
+    runInAction(() => {
+      this.experimentId = undefined;
+      this.cohortMap = {};
+      this.agentPersonaMap = {};
+      this.participantMap = {};
+      this.mediatorMap = {};
+      this.alertMap = {};
+      this.isEditing = false;
+      this.isEditingSettingsDialog = false;
+      this.currentParticipantId = undefined;
+      this.currentCohortId = undefined;
+      this.showCohortEditor = true;
+      this.showCohortList = true;
+      this.showParticipantStats = true;
+      this.showParticipantPreview = true;
+      this.hideLockedCohorts = false;
+      this.expandAllCohorts = true;
+      this.cohortEditing = undefined;
+    });
+    this.unsubscribeAll();
+  }
+
   getParticipantSearchResults(rawQuery: string) {
     const query = rawQuery.toLowerCase();
 
@@ -216,36 +248,43 @@ export class ExperimentManager extends Service {
     });
   }
 
+  @action
   setCohortEditing(cohort: CohortConfig | undefined) {
     this.cohortEditing = cohort;
   }
 
+  @action
   setShowCohortEditor(showCohortEditor: boolean) {
     this.showCohortEditor = showCohortEditor;
   }
 
+  @action
   setShowCohortList(showCohortList: boolean) {
     this.showCohortList = showCohortList;
   }
 
+  @action
   setShowParticipantPreview(showParticipantPreview: boolean) {
     this.showParticipantPreview = showParticipantPreview;
   }
 
+  @action
   setShowParticipantStats(showParticipantStats: boolean) {
     this.showParticipantStats = showParticipantStats;
   }
 
+  @action
   setHideLockedCohorts(hideLockedCohorts: boolean) {
     this.hideLockedCohorts = hideLockedCohorts;
   }
 
+  @action
   setExpandAllCohorts(expandAllCohorts: boolean) {
     this.expandAllCohorts = expandAllCohorts;
   }
 
+  @action
   setCurrentCohortId(id: string | undefined) {
-    console.log(id);
     this.currentCohortId = id;
   }
 
@@ -548,11 +587,6 @@ export class ExperimentManager extends Service {
     this.mediatorMap = {};
     this.agentPersonaMap = {};
     this.alertMap = {};
-  }
-
-  reset() {
-    this.experimentId = undefined;
-    this.unsubscribeAll();
   }
 
   // *********************************************************************** //

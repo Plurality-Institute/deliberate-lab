@@ -1,4 +1,4 @@
-import {computed, makeObservable, observable} from 'mobx';
+import {computed, makeObservable, observable, action, runInAction} from 'mobx';
 import {FirebaseService} from './firebase.service';
 import {Service} from './service';
 import {ExperimentService} from './experiment.service';
@@ -61,7 +61,9 @@ export class ParticipantAnswerService extends Service {
   }
 
   set isLoading(value: boolean) {
-    this.areAnswersLoading = value;
+    runInAction(() => {
+      this.areAnswersLoading = value;
+    });
   }
 
   getRankingList(stageId: string) {
@@ -89,26 +91,31 @@ export class ParticipantAnswerService extends Service {
       : undefined;
   }
 
+  @action
   setIds(experimentId: string, participantId: string) {
     this.experimentId = experimentId;
     this.participantId = participantId;
   }
 
+  @action
   reset() {
     this.experimentId = null;
     this.participantId = null;
     this.resetData();
   }
 
+  @action
   resetData() {
     this.answerMap = {};
     this.profile = null;
   }
 
+  @action
   setProfile(profile: ParticipantProfileBase) {
     this.profile = profile;
   }
 
+  @action
   addAnswer(stageId: string, answer: StageParticipantAnswer) {
     this.areAnswersLoading = true;
     this.answerMap[stageId] = answer;
