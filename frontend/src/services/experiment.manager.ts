@@ -418,10 +418,12 @@ export class ExperimentManager extends Service {
   }
 
   set isLoading(value: boolean) {
-    this.isCohortsLoading = value;
-    this.isParticipantsLoading = value;
-    this.isMediatorsLoading = value;
-    this.isAgentsLoading = value;
+    runInAction(() => {
+      this.isCohortsLoading = value;
+      this.isParticipantsLoading = value;
+      this.isMediatorsLoading = value;
+      this.isAgentsLoading = value;
+    });
   }
 
   updateForRoute(experimentId: string) {
@@ -449,14 +451,16 @@ export class ExperimentManager extends Service {
           'alerts',
         ),
         (snapshot) => {
-          let changedDocs = snapshot.docChanges().map((change) => change.doc);
-          if (changedDocs.length === 0) {
-            changedDocs = snapshot.docs;
-          }
+          runInAction(() => {
+            let changedDocs = snapshot.docChanges().map((change) => change.doc);
+            if (changedDocs.length === 0) {
+              changedDocs = snapshot.docs;
+            }
 
-          changedDocs.forEach((doc) => {
-            const data = doc.data() as AlertMessage;
-            this.alertMap[data.id] = data;
+            changedDocs.forEach((doc) => {
+              const data = doc.data() as AlertMessage;
+              this.alertMap[data.id] = data;
+            });
           });
         },
       ),
@@ -472,17 +476,19 @@ export class ExperimentManager extends Service {
           'cohorts',
         ),
         (snapshot) => {
-          let changedDocs = snapshot.docChanges().map((change) => change.doc);
-          if (changedDocs.length === 0) {
-            changedDocs = snapshot.docs;
-          }
+          runInAction(() => {
+            let changedDocs = snapshot.docChanges().map((change) => change.doc);
+            if (changedDocs.length === 0) {
+              changedDocs = snapshot.docs;
+            }
 
-          changedDocs.forEach((doc) => {
-            const data = doc.data() as CohortConfig;
-            this.cohortMap[doc.id] = data;
+            changedDocs.forEach((doc) => {
+              const data = doc.data() as CohortConfig;
+              this.cohortMap[doc.id] = data;
+            });
+
+            this.isCohortsLoading = false;
           });
-
-          this.isCohortsLoading = false;
         },
       ),
     );
@@ -500,20 +506,22 @@ export class ExperimentManager extends Service {
           where('currentStatus', '!=', ParticipantStatus.DELETED),
         ),
         (snapshot) => {
-          let changedDocs = snapshot.docChanges().map((change) => change.doc);
-          if (changedDocs.length === 0) {
-            changedDocs = snapshot.docs;
-          }
+          runInAction(() => {
+            let changedDocs = snapshot.docChanges().map((change) => change.doc);
+            if (changedDocs.length === 0) {
+              changedDocs = snapshot.docs;
+            }
 
-          changedDocs.forEach((doc) => {
-            const data = {
-              agentConfig: null,
-              ...doc.data(),
-            } as ParticipantProfileExtended;
-            this.participantMap[doc.id] = data;
+            changedDocs.forEach((doc) => {
+              const data = {
+                agentConfig: null,
+                ...doc.data(),
+              } as ParticipantProfileExtended;
+              this.participantMap[doc.id] = data;
+            });
+
+            this.isParticipantsLoading = false;
           });
-
-          this.isParticipantsLoading = false;
         },
       ),
     );
@@ -531,20 +539,22 @@ export class ExperimentManager extends Service {
           where('currentStatus', '!=', ParticipantStatus.DELETED),
         ),
         (snapshot) => {
-          let changedDocs = snapshot.docChanges().map((change) => change.doc);
-          if (changedDocs.length === 0) {
-            changedDocs = snapshot.docs;
-          }
+          runInAction(() => {
+            let changedDocs = snapshot.docChanges().map((change) => change.doc);
+            if (changedDocs.length === 0) {
+              changedDocs = snapshot.docs;
+            }
 
-          changedDocs.forEach((doc) => {
-            const data = {
-              agentConfig: null,
-              ...doc.data(),
-            } as MediatorProfile;
-            this.mediatorMap[doc.id] = data;
+            changedDocs.forEach((doc) => {
+              const data = {
+                agentConfig: null,
+                ...doc.data(),
+              } as MediatorProfile;
+              this.mediatorMap[doc.id] = data;
+            });
+
+            this.isMediatorsLoading = false;
           });
-
-          this.isMediatorsLoading = false;
         },
       ),
     );
@@ -561,26 +571,28 @@ export class ExperimentManager extends Service {
           ),
         ),
         (snapshot) => {
-          let changedDocs = snapshot.docChanges().map((change) => change.doc);
-          if (changedDocs.length === 0) {
-            changedDocs = snapshot.docs;
-          }
+          runInAction(() => {
+            let changedDocs = snapshot.docChanges().map((change) => change.doc);
+            if (changedDocs.length === 0) {
+              changedDocs = snapshot.docs;
+            }
 
-          changedDocs.forEach((doc) => {
-            const data = doc.data() as AgentPersonaConfig;
-            this.agentPersonaMap[doc.id] = data;
+            changedDocs.forEach((doc) => {
+              const data = doc.data() as AgentPersonaConfig;
+              this.agentPersonaMap[doc.id] = data;
+            });
+
+            this.isAgentsLoading = false;
           });
-
-          this.isAgentsLoading = false;
         },
       ),
     );
   }
 
+  @action
   unsubscribeAll() {
     this.unsubscribe.forEach((unsubscribe) => unsubscribe());
     this.unsubscribe = [];
-
     // Reset experiment data
     this.cohortMap = {};
     this.participantMap = {};
@@ -678,6 +690,7 @@ export class ExperimentManager extends Service {
   /** Create a new cohort
    * @rights Experimenter
    */
+  @action
   async createCohort(config: Partial<CohortConfig> = {}, name = '') {
     if (!this.sp.experimentService.experiment) return;
 
@@ -704,6 +717,7 @@ export class ExperimentManager extends Service {
   /** Update existing cohort metadata
    * @rights Experimenter
    */
+  @action
   async updateCohortMetadata(
     cohortId: string,
     metadata: MetadataConfig,
@@ -732,6 +746,7 @@ export class ExperimentManager extends Service {
   }
 
   /** Create human participant. */
+  @action
   async createParticipant(
     cohortId: string,
     prolificId?: string,
@@ -769,6 +784,7 @@ export class ExperimentManager extends Service {
   }
 
   /** Create agent participant. */
+  @action
   async createAgentParticipant(
     cohortId: string,
     agentConfig: ProfileAgentConfig,

@@ -146,6 +146,7 @@ export class ParticipantAnswerService extends Service {
     return answerMap[questionId];
   }
 
+  @action
   updateComprehensionAnswer(
     stageId: string,
     questionId: string,
@@ -200,6 +201,7 @@ export class ParticipantAnswerService extends Service {
     return Object.keys(answer.answerMap[participantId]);
   }
 
+  @action
   updateChatInput(stageId: string, chatInput: string) {
     this.chatInputMap[stageId] = chatInput;
   }
@@ -213,6 +215,7 @@ export class ParticipantAnswerService extends Service {
     this.profile = {...this.profile, ...config};
   }
 
+  @action
   updateRankingAnswer(stageId: string, rankingList: string[]) {
     const answer: RankingStageParticipantAnswer =
       createRankingStageParticipantAnswer({id: stageId});
@@ -220,6 +223,7 @@ export class ParticipantAnswerService extends Service {
     this.answerMap[stageId] = answer;
   }
 
+  @action
   updateSurveyAnswer(stageId: string, surveyAnswer: SurveyAnswer) {
     let answer = this.answerMap[stageId];
     if (!answer || answer.kind !== StageKind.SURVEY) {
@@ -230,6 +234,7 @@ export class ParticipantAnswerService extends Service {
     this.answerMap[stageId] = answer;
   }
 
+  @action
   updateSurveyPerParticipantAnswer(
     stageId: string,
     surveyAnswer: SurveyAnswer,

@@ -1,5 +1,5 @@
 import {Timestamp} from 'firebase/firestore';
-import {computed, makeObservable, observable} from 'mobx';
+import {computed, makeObservable, observable, action, runInAction} from 'mobx';
 
 import {FirebaseService} from './firebase.service';
 import {ExperimentManager} from './experiment.manager';
@@ -63,6 +63,7 @@ export class AgentEditor extends Service {
   // If active stage ID is assigned, show agent editor dialog
   @observable activeStageId = '';
 
+  @action
   setActiveStageId(stageId: string) {
     this.activeStageId = stageId;
   }
@@ -87,10 +88,12 @@ export class AgentEditor extends Service {
     return this.agents.find((agent) => agent.id === this.currentAgentId);
   }
 
+  @action
   setCurrentAgent(id: string) {
     this.currentAgentId = id;
   }
 
+  @action
   addAgentParticipant(setAsCurrent = true) {
     const agent = createAgentParticipantPersonaConfig();
     this.agents.push(agent);
@@ -100,6 +103,7 @@ export class AgentEditor extends Service {
     }
   }
 
+  @action
   addAgentMediator(setAsCurrent = true) {
     const agent = createAgentPersonaConfig();
     this.agents.push(agent);
@@ -109,6 +113,7 @@ export class AgentEditor extends Service {
     }
   }
 
+  @action
   deleteAgent(id: string) {
     const agentIndex = this.agents.findIndex((agent) => agent.id === id);
     if (agentIndex === -1) return;
@@ -407,6 +412,7 @@ export class AgentEditor extends Service {
     });
   }
 
+  @action
   resetAgents() {
     this.agents = [];
     this.agentChatPromptMap = {};
