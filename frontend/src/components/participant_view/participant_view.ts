@@ -89,6 +89,19 @@ export class ParticipantView extends MobxLitElement {
     `;
   }
 
+  public updated(changedProps: Map<string, unknown>) {
+    super.updated(changedProps);
+    const profile = this.participantService.profile;
+    if (
+      profile &&
+      profile.timestamps &&
+      profile.timestamps.startExperiment &&
+      this.participantService.currentStageViewId !== profile.currentStageId
+    ) {
+      this.participantService.setCurrentStageView(profile.currentStageId);
+    }
+  }
+
   private renderPopups() {
     return html`
       ${this.renderTransferPopup()} ${this.renderAttentionPopup()}
@@ -128,8 +141,8 @@ export class ParticipantView extends MobxLitElement {
       `;
     }
 
-    // Otherwise, route to current stage
-    this.participantService.setCurrentStageView(profile.currentStageId);
+    // Otherwise, just return nothing (routing will be handled in updated)
+    return nothing;
   }
 
   private renderAttentionPopup() {

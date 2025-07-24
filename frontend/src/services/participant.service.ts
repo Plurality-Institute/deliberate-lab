@@ -28,7 +28,7 @@ import {
   setDoc,
   updateDoc,
 } from 'firebase/firestore';
-import {action, computed, makeObservable, observable} from 'mobx';
+import {action, computed, makeObservable, observable, runInAction} from 'mobx';
 import {CohortService} from './cohort.service';
 import {ExperimentService} from './experiment.service';
 import {FirebaseService} from './firebase.service';
@@ -103,10 +103,13 @@ export class ParticipantService extends Service {
   }
 
   set isLoading(value: boolean) {
-    this.isProfileLoading = value;
-    this.areAnswersLoading = value;
+    runInAction(() => {
+      this.isProfileLoading = value;
+      this.areAnswersLoading = value;
+    });
   }
 
+  @action
   setParticipant(experimentId: string | null, participantId: string | null) {
     this.experimentId = experimentId;
     this.participantId = participantId;
@@ -190,6 +193,7 @@ export class ParticipantService extends Service {
     this.currentStageViewId = stageId;
   }
 
+  @action
   updateForRoute(
     experimentId: string, // experiment ID
     participantId: string, // participant ID
@@ -213,7 +217,9 @@ export class ParticipantService extends Service {
     this.sp.participantAnswerService.resetData();
 
     if (this.experimentId === null || this.participantId === null) {
-      this.isLoading = false;
+      runInAction(() => {
+        this.isLoading = false;
+      });
       return;
     }
 
@@ -234,28 +240,31 @@ export class ParticipantService extends Service {
           this.participantId,
         ),
         async (doc) => {
-          this.profile = {
-            agentConfig: null,
-            ...doc.data(),
-          } as ParticipantProfileExtended;
+          runInAction(() => {
+            this.profile = {
+              agentConfig: null,
+              ...doc.data(),
+            } as ParticipantProfileExtended;
+          });
           // Load cohort data
           if (this.experimentId) {
             await this.sp.cohortService.loadCohortData(
               this.experimentId,
-              this.profile.currentCohortId,
+              this.profile!.currentCohortId,
             );
           }
 
           // Load profile to participant answer service
-          this.sp.participantAnswerService.setProfile(this.profile);
+          this.sp.participantAnswerService.setProfile(this.profile!);
           // Set current stage (use undefined if experiment not started)
-          if (this.profile.timestamps.startExperiment) {
-            this.currentStageViewId = this.profile.currentStageId;
-          } else {
-            this.currentStageViewId = undefined;
-          }
-
-          this.isProfileLoading = false;
+          runInAction(() => {
+            if (this.profile!.timestamps.startExperiment) {
+              this.currentStageViewId = this.profile!.currentStageId;
+            } else {
+              this.currentStageViewId = undefined;
+            }
+            this.isProfileLoading = false;
+          });
         },
       ),
     );
@@ -272,34 +281,41 @@ export class ParticipantService extends Service {
           'stageData',
         ),
         (snapshot) => {
-          let changedDocs = snapshot.docChanges().map((change) => change.doc);
-          if (changedDocs.length === 0) changedDocs = snapshot.docs;
+          runInAction(() => {
+            let changedDocs = snapshot.docChanges().map((change) => change.doc);
+            if (changedDocs.length === 0) changedDocs = snapshot.docs;
 
-          // Update the public stage data signals
-          changedDocs.forEach((doc) => {
-            const answer = doc.data() as StageParticipantAnswer;
-            this.answerMap[doc.id] = answer;
-            // Load answers to participant answer service
-            this.sp.participantAnswerService.addAnswer(doc.id, answer);
+            // Update the public stage data signals
+            changedDocs.forEach((doc) => {
+              const answer = doc.data() as StageParticipantAnswer;
+              this.answerMap[doc.id] = answer;
+              // Load answers to participant answer service
+              this.sp.participantAnswerService.addAnswer(doc.id, answer);
+            });
+            this.areAnswersLoading = false;
           });
-          this.areAnswersLoading = false;
         },
       ),
     );
   }
 
+  @action
   unsubscribeAll() {
     this.unsubscribe.forEach((unsubscribe) => unsubscribe());
-    this.unsubscribe = [];
-
-    this.profile = undefined;
-    this.answerMap = {};
+    runInAction(() => {
+      this.unsubscribe = [];
+      this.profile = undefined;
+      this.answerMap = {};
+    });
     this.sp.participantAnswerService.reset();
   }
 
+  @action
   reset() {
-    this.experimentId = null;
-    this.participantId = null;
+    runInAction(() => {
+      this.experimentId = null;
+      this.participantId = null;
+    });
     this.unsubscribeAll();
     this.sp.cohortService.reset();
   }
@@ -382,12 +398,14 @@ export class ParticipantService extends Service {
       },
     );
 
-    if (result.endExperiment) {
-      this.routeToEndExperiment(ParticipantStatus.SUCCESS);
-    } else if (result.currentStageId) {
-      // Route to next stage
-      this.currentStageViewId = result.currentStageId;
-    }
+    runInAction(() => {
+      if (result.endExperiment) {
+        this.routeToEndExperiment(ParticipantStatus.SUCCESS);
+      } else if (result.currentStageId) {
+        // Route to next stage
+        this.currentStageViewId = result.currentStageId;
+      }
+    });
 
     return result.currentStageId ?? '';
   }
@@ -427,12 +445,14 @@ export class ParticipantService extends Service {
       },
     );
 
-    if (result.endExperiment) {
-      this.routeToEndExperiment(ParticipantStatus.SUCCESS);
-    } else if (result.currentStageId) {
-      // Route to next stage
-      this.currentStageViewId = result.currentStageId;
-    }
+    runInAction(() => {
+      if (result.endExperiment) {
+        this.routeToEndExperiment(ParticipantStatus.SUCCESS);
+      } else if (result.currentStageId) {
+        // Route to next stage
+        this.currentStageViewId = result.currentStageId;
+      }
+    });
 
     return result.currentStageId ?? '';
   }
@@ -491,7 +511,9 @@ export class ParticipantService extends Service {
   /** Send chat message. */
   async createChatMessage(config: Partial<ChatMessage> = {}) {
     let response = {};
-    this.isSendingChat = true;
+    runInAction(() => {
+      this.isSendingChat = true;
+    });
     if (this.experimentId && this.profile) {
       const chatMessage = createParticipantChatMessage({
         ...config,
@@ -518,7 +540,9 @@ export class ParticipantService extends Service {
         createData,
       );
     }
-    this.isSendingChat = false;
+    runInAction(() => {
+      this.isSendingChat = false;
+    });
     return response;
   }
 

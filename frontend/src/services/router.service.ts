@@ -1,6 +1,6 @@
 import * as router5 from 'router5';
 import browserPlugin from 'router5-plugin-browser';
-import {computed, makeObservable, observable} from 'mobx';
+import {computed, makeObservable, observable, action, runInAction} from 'mobx';
 import {Service} from './service';
 import {AnalyticsService} from './analytics.service';
 import {ExperimentManager} from './experiment.manager';
@@ -99,6 +99,7 @@ export class RouterService extends Service {
     this.router.start();
   }
 
+  @action
   private handlerRouteChange(routeChange: RouteChange) {
     this.activeRoute = routeChange.route;
     if (this.activePage) {
@@ -132,14 +133,17 @@ export class RouterService extends Service {
     }
   }
 
+  @action
   setExperimenterNav(isOpen: boolean) {
     this.isExperimenterNavOpen = isOpen;
   }
 
+  @action
   setExperimenterPanel(isOpen: boolean) {
     this.isExperimenterPanelOpen = isOpen;
   }
 
+  @action
   navigate(page: Pages, params: {[key: string]: string} = {}) {
     this.hasNavigated = true;
     this.sp.experimentManager.setIsEditing(false);

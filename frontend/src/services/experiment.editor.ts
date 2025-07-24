@@ -13,7 +13,7 @@ import {
   generateId,
 } from '@deliberation-lab/utils';
 import {Timestamp} from 'firebase/firestore';
-import {computed, makeObservable, observable} from 'mobx';
+import {computed, makeObservable, observable, action, runInAction} from 'mobx';
 import {
   writeExperimentCallable,
   updateExperimentCallable,
@@ -117,6 +117,7 @@ export class ExperimentEditor extends Service {
     };
   }
 
+  @action
   setCurrentStageId(id: string | undefined) {
     this.currentStageId = id;
   }
@@ -145,6 +146,7 @@ export class ExperimentEditor extends Service {
     }
   }
 
+  @action
   setStages(stages: StageConfig[]) {
     // Make sure all new stages have waitForAllParticipants configured correctly
     for (const stage of stages) {
@@ -154,6 +156,7 @@ export class ExperimentEditor extends Service {
     this.stages = stages;
   }
 
+  @action
   addStage(stage: StageConfig) {
     // Check if stage will have waitForAllParticipants dependencies
     // after it's added
@@ -166,6 +169,7 @@ export class ExperimentEditor extends Service {
     return this.stages.find((stage) => stage.id === stageId);
   }
 
+  @action
   deleteStage(index: number) {
     this.stages = [
       ...this.stages.slice(0, index),
@@ -173,6 +177,7 @@ export class ExperimentEditor extends Service {
     ];
   }
 
+  @action
   moveStageUp(index: number) {
     this.stages = [
       ...this.stages.slice(0, index - 1),
@@ -182,6 +187,7 @@ export class ExperimentEditor extends Service {
     ];
   }
 
+  @action
   moveStageDown(index: number) {
     this.stages = [
       ...this.stages.slice(0, index),
@@ -191,16 +197,19 @@ export class ExperimentEditor extends Service {
     ];
   }
 
+  @action
   toggleStageBuilderDialog(showTemplates: boolean = false) {
     this.showStageBuilderDialog = !this.showStageBuilderDialog;
     this.showTemplatesTab = showTemplates;
   }
 
+  @action
   loadExperiment(experiment: Experiment, stages: StageConfig[]) {
     this.experiment = experiment;
     this.setStages(stages);
   }
 
+  @action
   resetExperiment() {
     this.experiment = createExperimentConfig();
     this.stages = [];
@@ -214,6 +223,7 @@ export class ExperimentEditor extends Service {
   /** Create an experiment.
    * @rights Experimenter
    */
+  @action
   async writeExperiment() {
     this.isWritingExperiment = true;
 
@@ -230,13 +240,16 @@ export class ExperimentEditor extends Service {
       },
     );
 
-    this.isWritingExperiment = false;
+    runInAction(() => {
+      this.isWritingExperiment = false;
+    });
     return response;
   }
 
   /** Update an experiment.
    * @rights Experimenter who created the experiment
    */
+  @action
   async updateExperiment() {
     this.isWritingExperiment = true;
 
@@ -253,7 +266,9 @@ export class ExperimentEditor extends Service {
       },
     );
 
-    this.isWritingExperiment = false;
+    runInAction(() => {
+      this.isWritingExperiment = false;
+    });
     return response;
   }
 }
