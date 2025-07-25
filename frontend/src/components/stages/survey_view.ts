@@ -86,6 +86,19 @@ export class SurveyView extends MobxLitElement {
     const saveAnswers = async () => {
       if (!this.stage) return;
 
+      // If randomizeQuestions is enabled, store the order in the answer map under a reserved key
+      if (this.stage.randomizeQuestions) {
+        const orderAnswer: TextSurveyAnswer = {
+          id: '__questionOrder',
+          kind: SurveyQuestionKind.TEXT,
+          answer: questions.map((q) => q.id).join(','),
+        };
+        this.participantAnswerService.updateSurveyAnswer(
+          this.stage.id,
+          orderAnswer,
+        );
+      }
+
       // Save all answers for this stage
       await this.participantAnswerService.saveSurveyAnswers(this.stage.id);
       await this.participantService.progressToNextStage();
