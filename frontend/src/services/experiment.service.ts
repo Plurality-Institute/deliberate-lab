@@ -36,7 +36,7 @@ export class ExperimentService extends Service {
   // TODO: Add roleConfigMap
 
   // Loading
-  @observable unsubscribe: Unsubscribe[] = [];
+  unsubscribe: Unsubscribe[] = [];
   @observable isExperimentLoading = false;
   @observable isStageConfigsLoading = false;
 
@@ -61,7 +61,9 @@ export class ExperimentService extends Service {
   @action
   loadExperiment(id: string) {
     this.unsubscribeAll();
-    this.isLoading = true;
+
+    this.isExperimentLoading = true;
+    this.isStageConfigsLoading = true;
 
     // Subscribe to the experiment
     this.unsubscribe.push(
@@ -96,10 +98,10 @@ export class ExperimentService extends Service {
               changedDocs = snapshot.docs;
             }
 
-            changedDocs.forEach((doc) => {
+            for (const doc of changedDocs) {
               const data = doc.data() as StageConfig;
               this.stageConfigMap[doc.id] = data;
-            });
+            }
 
             this.isStageConfigsLoading = false;
           });
@@ -108,7 +110,6 @@ export class ExperimentService extends Service {
     );
   }
 
-  @action
   unsubscribeAll() {
     this.unsubscribe.forEach((unsubscribe) => unsubscribe());
     this.unsubscribe = [];

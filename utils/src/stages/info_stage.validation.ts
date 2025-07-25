@@ -23,6 +23,9 @@ export const InfoStageConfigData = Type.Object(
     descriptions: StageTextConfigSchema,
     progress: StageProgressConfigSchema,
     infoLines: Type.Array(Type.String()),
+    infoTextsRandomized: Type.Optional(
+      Type.Array(Type.String(), {minLength: 1}),
+    ),
   },
   strict,
 );

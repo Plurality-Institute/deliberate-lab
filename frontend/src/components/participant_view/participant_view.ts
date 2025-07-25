@@ -59,10 +59,7 @@ export class ParticipantView extends MobxLitElement {
   override render() {
     // Block UI until experiment is loaded
     if (this.experimentService.isLoading) {
-      return html`<div class="loading-spinner">
-        Loading...${this.experimentService.isExperimentLoading},
-        ${this.experimentService.isStageConfigsLoading}
-      </div>`;
+      return html`<div class="loading-spinner">Loading...</div>`;
     }
 
     const stageId = this.participantService.currentStageViewId;

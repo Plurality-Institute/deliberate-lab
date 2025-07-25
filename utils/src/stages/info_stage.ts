@@ -16,6 +16,7 @@ import {
 export interface InfoStageConfig extends BaseStageConfig {
   kind: StageKind.INFO;
   infoLines: string[];
+  infoTextsRandomized?: string[]; // multiple versions of info text, one will be shown at random (each string is a concatenated info block)
 }
 
 // ************************************************************************* //
@@ -34,5 +35,6 @@ export function createInfoStage(
     descriptions: config.descriptions ?? createStageTextConfig(),
     progress: config.progress ?? createStageProgressConfig(),
     infoLines: config.infoLines ?? [],
+    infoTextsRandomized: config.infoTextsRandomized ?? undefined,
   };
 }
