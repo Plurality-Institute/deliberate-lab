@@ -60,20 +60,19 @@ export class SurveyView extends MobxLitElement {
     // Determine question order
     let questions = [...this.stage.questions];
     if (this.stage.randomizeQuestions) {
-      const userId = this.participantService.participantId;
-      if (userId) {
-        // Convert userId to a number seed for shuffle
-        const seed = Array.from(userId).reduce(
-          (acc, char) => acc + char.charCodeAt(0),
-          0,
-        );
-        questions = shuffle(questions, seed);
-      } else {
+      if (!this.participantService.participantId) {
         console.error(
           'Survey stage randomization requires participantId to be set.',
         );
         return nothing; // better to fail than silently show incorrect order
       }
+
+      const seedStr = this.participantService.participantId + this.stage.id;
+      const seed = Array.from(seedStr).reduce(
+        (acc, char) => acc + char.charCodeAt(0),
+        0,
+      );
+      questions = shuffle(questions, seed);
     }
 
     const questionsComplete = (): boolean => {

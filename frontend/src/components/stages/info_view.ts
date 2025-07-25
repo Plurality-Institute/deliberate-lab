@@ -39,15 +39,15 @@ export class InfoView extends MobxLitElement {
       this.stage.infoTextsRandomized &&
       this.stage.infoTextsRandomized.length > 0
     ) {
-      const userId = this.participantService.profile?.privateId ?? '';
-      if (!userId) {
+      if (!this.participantService.participantId) {
         console.error(
-          'Participant privateId is not available, cannot randomize info text.',
+          'Info stage randomization requires participantId to be set.',
         );
-        return nothing;
+        return nothing; // better to fail than silently show incorrect order
       }
-      // Convert userId to a number seed for shuffle
-      const seed = Array.from(userId).reduce(
+
+      const seedStr = this.participantService.participantId + this.stage.id;
+      const seed = Array.from(seedStr).reduce(
         (acc, char) => acc + char.charCodeAt(0),
         0,
       );
