@@ -189,7 +189,7 @@ export async function callOpenAIChatCompletion(
 
   return {
     status: ModelResponseStatus.OK,
-    text: response.choices[0].message.content,
+    text: response.choices[0].message.content ?? '',
   };
 }
 
@@ -199,7 +199,7 @@ export async function getOpenAIAPIChatCompletionResponse(
   modelName: string,
   promptText: string,
   generationConfig: ModelGenerationConfig,
-  structuredOutputConfig?: StructuredOutputConfig = null,
+  structuredOutputConfig?: StructuredOutputConfig,
 ): Promise<ModelResponse> {
   if (!modelName) {
     console.warn('OpenAI API model name not set.');
@@ -220,7 +220,7 @@ export async function getOpenAIAPIChatCompletionResponse(
     structuredOutputConfig,
   );
 
-  let response;
+  let response: ModelResponse;
   try {
     response = await callOpenAIChatCompletion(
       apiKey,
@@ -229,12 +229,13 @@ export async function getOpenAIAPIChatCompletionResponse(
       promptText,
       generationConfig,
       structuredOutputConfig,
-    );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ) as ModelResponse;
+    if (response.text == null) response.text = '';
   } catch (error: any) {
     response = {
       status: ModelResponseStatus.UNKNOWN_ERROR,
       errorMessage: error.message,
+      text: '',
     };
   }
 
