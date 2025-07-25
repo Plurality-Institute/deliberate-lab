@@ -14,6 +14,7 @@ import {
   createAgentChatPromptConfig,
   createParticipantChatMessage,
   getDefaultChatPrompt,
+  getShouldRespondChatPrompt,
   getTimeElapsed,
   structuredOutputEnabled,
 } from '@deliberation-lab/utils';
@@ -329,17 +330,14 @@ export async function getAgentChatAPIResponse(
       promptConfig.structuredOutputConfig;
 
     // Compose the should-respond prompt, appending the same context as the main prompt
-    const shouldRespondPrompt = [
-      promptConfig.shouldRespondPromptContext,
-      getDefaultChatPrompt(
-        profile,
-        agentConfig,
-        pastStageContext,
-        chatMessages,
-        promptConfig,
-        stageConfig as ChatStageConfig,
-      ),
-    ].join('\n\n');
+    const shouldRespondPrompt = getShouldRespondChatPrompt(
+      profile,
+      agentConfig,
+      pastStageContext,
+      chatMessages,
+      promptConfig,
+      stageConfig as ChatStageConfig,
+    );
 
     const shouldRespondResponse = await getAgentResponse(
       experimenterData,

@@ -1,3 +1,4 @@
+
 import {UnifiedTimestamp} from '../shared';
 import {AgentChatPromptConfig, ProfileAgentConfig} from '../agent';
 import {ParticipantProfileBase} from '../participant';
@@ -48,6 +49,34 @@ export function getDefaultChatPrompt(
       promptConfig.promptSettings.includeStageInfo,
     ),
     promptConfig.promptContext,
+    makeStructuredOutputPrompt(promptConfig.structuredOutputConfig),
+  ].join('\n');
+}
+
+/**
+ * Build a chat prompt for should-respond logic, using shouldRespondPromptContext
+ * instead of the default promptContext, but otherwise wrapping in same header/footer.
+ */
+export function getShouldRespondChatPrompt(
+  profile: ParticipantProfileBase,
+  agentConfig: ProfileAgentConfig,
+  pastStageContext: string,
+  chatMessages: ChatMessage[],
+  promptConfig: AgentChatPromptConfig,
+  stageConfig: ChatStageConfig,
+) {
+  return [
+    getParticipantProfilePromptContext(
+      profile,
+      agentConfig?.promptContext ?? '',
+    ),
+    pastStageContext,
+    getChatStagePromptContext(
+      chatMessages,
+      stageConfig,
+      promptConfig.promptSettings.includeStageInfo,
+    ),
+    promptConfig.shouldRespondPromptContext,
     makeStructuredOutputPrompt(promptConfig.structuredOutputConfig),
   ].join('\n');
 }
