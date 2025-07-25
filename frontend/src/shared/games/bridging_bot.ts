@@ -815,7 +815,7 @@ const createBbotAgent = () => {
         includeStageInfo: false, // Do not include the chat description, since it could be confusing
       }),
       chatSettings: createAgentChatSettings({
-        wordsPerMinute: 700,
+        wordsPerMinute: 5000, // the llm provides plenty of delay on its own
         minMessagesBeforeResponding: 5,
         canSelfTriggerCalls: false,
         maxResponses: 1,
