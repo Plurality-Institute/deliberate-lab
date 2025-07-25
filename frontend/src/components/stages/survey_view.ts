@@ -21,13 +21,12 @@ import {
   ScaleSurveyAnswer,
   ScaleSurveyQuestion,
   SurveyQuestionKind,
-  SurveyAnswer,
   SurveyStageConfig,
-  SurveyStageParticipantAnswer,
   TextSurveyAnswer,
   TextSurveyQuestion,
   isMultipleChoiceImageQuestion,
 } from '@deliberation-lab/utils';
+import {shuffle} from 'seed-shuffle';
 import {
   isSurveyComplete,
   isSurveyAnswerComplete,
@@ -58,10 +57,29 @@ export class SurveyView extends MobxLitElement {
       return nothing;
     }
 
+    // Determine question order
+    let questions = [...this.stage.questions];
+    if (this.stage.randomizeQuestions) {
+      const userId = this.participantService.participantId;
+      if (userId) {
+        // Convert userId to a number seed for shuffle
+        const seed = Array.from(userId).reduce(
+          (acc, char) => acc + char.charCodeAt(0),
+          0,
+        );
+        questions = shuffle(questions, seed);
+      } else {
+        console.error(
+          'Survey stage randomization requires participantId to be set.',
+        );
+        return nothing; // better to fail than silently show incorrect order
+      }
+    }
+
     const questionsComplete = (): boolean => {
       if (!this.stage) return false;
       return isSurveyComplete(
-        this.stage.questions,
+        questions,
         this.participantAnswerService.getSurveyAnswerMap(this.stage.id),
       );
     };
@@ -77,7 +95,7 @@ export class SurveyView extends MobxLitElement {
     return html`
       <stage-description .stage=${this.stage}></stage-description>
       <div class="questions-wrapper">
-        ${this.stage.questions.map((question) => this.renderQuestion(question))}
+        ${questions.map((question) => this.renderQuestion(question))}
       </div>
       <stage-footer
         .disabled=${!questionsComplete()}
@@ -145,7 +163,7 @@ export class SurveyView extends MobxLitElement {
           >
           </md-checkbox>
           <div class=${titleClasses}>
-            ${unsafeHTML(convertMarkdownToHTML(question.questionTitle + "*"))}
+            ${unsafeHTML(convertMarkdownToHTML(question.questionTitle + '*'))}
           </div>
         </label>
       </div>
@@ -183,7 +201,7 @@ export class SurveyView extends MobxLitElement {
     return html`
       <div class="question">
         <div class=${titleClasses}>
-          ${unsafeHTML(convertMarkdownToHTML(question.questionTitle + "*"))}
+          ${unsafeHTML(convertMarkdownToHTML(question.questionTitle + '*'))}
         </div>
         <pr-textarea
           variant="outlined"
@@ -312,7 +330,7 @@ export class SurveyView extends MobxLitElement {
     return html`
       <div class="question">
         <div class=${titleClasses}>
-          ${unsafeHTML(convertMarkdownToHTML(question.questionTitle + "*"))}
+          ${unsafeHTML(convertMarkdownToHTML(question.questionTitle + '*'))}
         </div>
         <div class="scale labels">
           <div>${question.lowerText}</div>

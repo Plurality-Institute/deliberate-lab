@@ -568,8 +568,10 @@ const FEELING_THERMOMETER_SURVEY_CONFIG: Partial<SurveyStageConfig> = {
       'Imagine a thermometer that ranges from 0 to 10, where 0 means you feel extremely cold, negative, or hostile, and 10 means you feel extremely warm, positive, or friendly.',
   }),
   game: StageGame.BBOT,
+  randomizeQuestions: true,
   questions: [
     createScaleSurveyQuestion({
+      id: 'feeling_thermometer_legal',
       questionTitle:
         'First, think about people who believe abortion should be **legal** in all or most cases. Using this thermometer, what number best describes your overall feelings toward these individuals?',
       upperValue: 10,
@@ -578,6 +580,7 @@ const FEELING_THERMOMETER_SURVEY_CONFIG: Partial<SurveyStageConfig> = {
       lowerText: 'Cold, negative, or hostile',
     }),
     createScaleSurveyQuestion({
+      id: 'feeling_thermometer_illegal',
       questionTitle:
         'Next, think about people who believe abortion should be **illegal** in all or most cases. Using this thermometer, what number best describes your overall feelings toward these individuals?',
       upperValue: 10,

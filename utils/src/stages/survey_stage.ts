@@ -23,6 +23,7 @@ import {
 export interface SurveyStageConfig extends BaseStageConfig {
   kind: StageKind.SURVEY;
   questions: SurveyQuestion[];
+  randomizeQuestions?: boolean; // Whether to randomize question order
 }
 
 /** Special "survey per participant" stage
@@ -162,6 +163,7 @@ export function createSurveyStage(
     descriptions: config.descriptions ?? createStageTextConfig(),
     progress: config.progress ?? createStageProgressConfig(),
     questions: config.questions ?? [],
+    randomizeQuestions: config.randomizeQuestions ?? false,
   };
 }
 
