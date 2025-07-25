@@ -118,6 +118,13 @@ export class ChatMessageComponent extends MobxLitElement {
             >
           </div>
           <div class="chat-bubble">${unsafeHTML(message)}</div>
+          <div
+            class="mediator-notice"
+            style="margin-top: 0.5em; font-size: 0.9em; color: #888;"
+          >
+            Bridging Bot is an automated system. It won’t send additional
+            messages.
+          </div>
           ${this.renderDebuggingExplanation(chatMessage)}
         </div>
       </div>
