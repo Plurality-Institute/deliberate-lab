@@ -39,6 +39,10 @@ export class CohortLanding extends MobxLitElement {
       return false;
     };
 
+    if (this.experimentService.isLoading) {
+      return html`<div class="loading-spinner">Loading...</div>`;
+    }
+
     const renderText = () => {
       if (isLockedCohort()) {
         return html`<div>This experiment is currently closed.</div>`;

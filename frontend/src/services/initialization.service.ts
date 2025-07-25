@@ -18,7 +18,6 @@ export class InitializationService extends Service {
 
   @observable isAppInitialized = false;
 
-  @action
   override async initialize() {
     this.sp.analyticsService.initialize();
     this.sp.firebaseService.initialize();
