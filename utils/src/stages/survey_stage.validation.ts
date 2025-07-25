@@ -89,6 +89,7 @@ export const SurveyStageConfigData = Type.Object(
     descriptions: StageTextConfigSchema,
     progress: StageProgressConfigSchema,
     questions: Type.Array(SurveyQuestionData),
+    randomizeQuestions: Type.Optional(Type.Boolean()),
   },
   strict,
 );
