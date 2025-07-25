@@ -99,9 +99,25 @@ export const scrubStalePresence = onSchedule(
       userSnapshot.forEach((connSnapshot) => {
         connSnapshots.push(connSnapshot);
       });
+
+      // Find the most recent connection (excluding meta nodes)
+      let mostRecentTs = -Infinity;
+      let mostRecentKey: string | null = null;
+      for (const connSnapshot of connSnapshots) {
+        if (!connSnapshot.key!.startsWith('_')) {
+          const ts = connSnapshot.child('ts').val();
+          if (typeof ts === 'number' && ts > mostRecentTs) {
+            mostRecentTs = ts;
+            mostRecentKey = connSnapshot.key!;
+          }
+        }
+      }
+
+      // Remove all stale connections except the most recent one
       for (const connSnapshot of connSnapshots) {
         if (
           !connSnapshot.key!.startsWith('_') &&
+          connSnapshot.key !== mostRecentKey &&
           connSnapshot.child('ts').val() < cutoff
         ) {
           connSnapshot.ref.remove();
