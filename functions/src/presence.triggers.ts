@@ -36,15 +36,16 @@ export const mirrorPresenceToFirestore = database.onValueWritten(
       .doc(`experiments/${experimentId}/participants/${participantPrivateId}`);
 
     const siblingsSnapshot = await parentRef!.once('value');
+    const siblings = siblingsSnapshot.val();
 
     let online = false;
-    for (const key in siblingsSnapshot.val()) {
+    for (const key in siblings) {
       if (key.startsWith('_')) {
         // ignore _aggregate, future meta-nodes
         continue;
       }
 
-      if (siblingsSnapshot.val()[key].connected) {
+      if (siblings[key].connected) {
         online = true;
         break;
       }
