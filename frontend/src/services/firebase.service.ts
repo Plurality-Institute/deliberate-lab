@@ -26,7 +26,6 @@ import {
   FirebaseStorage,
   getStorage,
 } from 'firebase/storage';
-import {makeObservable} from 'mobx';
 
 import {
   FIREBASE_LOCAL_HOST_PORT_AUTH,
@@ -43,7 +42,6 @@ import {Service} from './service';
 export class FirebaseService extends Service {
   constructor() {
     super();
-    makeObservable(this);
 
     this.app = initializeApp(FIREBASE_CONFIG);
     this.firestore = getFirestore(this.app);
