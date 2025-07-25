@@ -1,3 +1,4 @@
+import {shuffle} from 'seed-shuffle';
 import '../progress/progress_stage_completed';
 
 import './stage_description';
@@ -31,7 +32,32 @@ export class InfoView extends MobxLitElement {
 
     const participantPrivateId =
       this.participantService.profile?.privateId ?? '';
-    let infoLinesJoined = this.stage?.infoLines.join('\n\n') ?? '';
+    let infoLinesJoined = '';
+
+    // If infoTextsRandomized is present, pick one entry at random, seeded by userId
+    if (
+      this.stage.infoTextsRandomized &&
+      this.stage.infoTextsRandomized.length > 0
+    ) {
+      const userId = this.participantService.profile?.privateId ?? '';
+      if (!userId) {
+        console.error(
+          'Participant privateId is not available, cannot randomize info text.',
+        );
+        return nothing;
+      }
+      // Convert userId to a number seed for shuffle
+      const seed = Array.from(userId).reduce(
+        (acc, char) => acc + char.charCodeAt(0),
+        0,
+      );
+      const shuffled: string[] = shuffle(this.stage.infoTextsRandomized, seed);
+      const selected: string =
+        Array.isArray(shuffled) && shuffled.length > 0 ? shuffled[0] : '';
+      infoLinesJoined = selected.replaceAll('\n', '\n\n'); // I guess we want double newlines?
+    } else {
+      infoLinesJoined = this.stage?.infoLines.join('\n\n') ?? '';
+    }
     infoLinesJoined = infoLinesJoined.replaceAll(
       '{{participantPrivateId}}',
       participantPrivateId,

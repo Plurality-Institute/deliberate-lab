@@ -362,21 +362,38 @@ const BBOT_TOS_STAGE = createTOSStage({
   tosLines: BBOT_CONSENT.split('\n'),
 });
 
-const BBOT_DEBRIEF_TEXT = `**The study is now complete. Thank you for participating.**
+// We want two copies of the debrief text, with the links in different orders.
+const BBOT_DEBRIEF_TEXT_START = `**The study is now complete. Thank you for participating.**
 
 Abortion rights is an important policy issue. Here are some links to additional resources if you would like to learn more about different perspectives on this topic (links open in a new browser tab):
+`;
 
-- [Pro-choice resources](https://linkly.link/2BtIu?i=crr_{{participantPrivateId}})
-- [Pro-life resources](https://linkly.link/2BtIp?i=nrl_{{participantPrivateId}})
+const BBOT_DEBRIEF_LINKS = [
+  `- [Pro-choice resources](https://linkly.link/2BtIu?i=crr_{{participantPrivateId}}`,
+  `- [Pro-life resources](https://linkly.link/2BtIp?i=nrl_{{participantPrivateId}}`,
+];
+
+const BBOT_DEBRIEF_TEXT_END = `
 
 During your chat you were randomly assigned to a condition that involved either (a) no moderator message, (b) a standard pre-written message, or (c) a message written by an AI moderation system we are testing. The system is designed to help support constructive disagreement in online conversations. The goal of our study is to understand whether this form of moderation can improve the quality of text-based online conversations.
 
 We withheld this detail at the start so it would not influence how you spoke with your partner or responded to our surveys; the IRB approved this temporary omission because the study posed no more than minimal risk. If you have concerns, would like your data removed, or want more information, email <jeff@plurality.institute>.`;
 
+function makeDebriefPermutation(links: string[]): string {
+  return (
+    BBOT_DEBRIEF_TEXT_START +
+    links.map((link, idx) => link + `_${idx})`).join('\n') +
+    BBOT_DEBRIEF_TEXT_END
+  );
+}
+
 const BBOT_DEBRIEF_STAGE = createInfoStage({
   id: 'debrief',
   name: 'Conclusion',
-  infoLines: BBOT_DEBRIEF_TEXT.split('\n'),
+  infoTextsRandomized: [
+    makeDebriefPermutation(BBOT_DEBRIEF_LINKS),
+    makeDebriefPermutation([...BBOT_DEBRIEF_LINKS].reverse()),
+  ],
 });
 
 const BBOT_PROFILE_STAGE = createProfileStage({
