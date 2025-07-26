@@ -365,12 +365,12 @@ const BBOT_TOS_STAGE = createTOSStage({
 // We want two copies of the debrief text, with the links in different orders.
 const BBOT_DEBRIEF_TEXT_START = `**The study is now complete. Thank you for participating.**
 
-Abortion rights is an important policy issue. Here are some links to additional resources if you would like to learn more about different perspectives on this topic (links open in a new browser tab):
+The issue of abortion rights is an important policy matter. Here are some links to additional resources if you would like to learn more about different perspectives on this topic (links open in a new browser tab):
 `;
 
 const BBOT_DEBRIEF_LINKS = [
-  `- [Pro-choice resources](https://linkly.link/2BtIu?i=crr_{{participantPrivateId}}`,
-  `- [Pro-life resources](https://linkly.link/2BtIp?i=nrl_{{participantPrivateId}}`,
+  `- [Pro-choice resources](https://linkly.link/2BtIu?i=crr_{{participantShortId}}`,
+  `- [Pro-life resources](https://linkly.link/2BtIp?i=nrl_{{participantShortId}}`,
 ];
 
 const BBOT_DEBRIEF_TEXT_END = `
