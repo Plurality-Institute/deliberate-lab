@@ -32,6 +32,17 @@ export class InfoView extends MobxLitElement {
 
     const participantPrivateId =
       this.participantService.profile?.privateId ?? '';
+    const participantPublicId = this.participantService.profile?.publicId ?? '';
+    // participantShortId: last three sections of the guid, separated by dashes
+    let participantShortId = '';
+    if (participantPrivateId) {
+      const parts = participantPrivateId.split('-');
+      if (parts.length >= 2) {
+        participantShortId = parts.slice(-2).join('-');
+      } else {
+        participantShortId = participantPrivateId;
+      }
+    }
     let infoLinesJoined = '';
 
     // If infoTextsRandomized is present, pick one entry at random, seeded by userId
@@ -61,6 +72,14 @@ export class InfoView extends MobxLitElement {
     infoLinesJoined = infoLinesJoined.replaceAll(
       '{{participantPrivateId}}',
       participantPrivateId,
+    );
+    infoLinesJoined = infoLinesJoined.replaceAll(
+      '{{participantPublicId}}',
+      participantPublicId,
+    );
+    infoLinesJoined = infoLinesJoined.replaceAll(
+      '{{participantShortId}}',
+      participantShortId,
     );
     return html`
       <stage-description .stage=${this.stage}></stage-description>
