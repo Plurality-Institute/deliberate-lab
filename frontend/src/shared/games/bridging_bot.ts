@@ -814,7 +814,7 @@ const createBbotAgent = () => {
       }),
       shouldRespondPromptContext: BBOT_SHOULD_RESPOND_PROMPT,
       shouldRespondGenerationConfig: createModelGenerationConfig({
-        temperature: 0.4,
+        temperature: 0.2,
       }),
       promptSettings: createAgentPromptSettings({
         includeStageHistory: false,
