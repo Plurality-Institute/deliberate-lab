@@ -95,7 +95,7 @@ const AGREE_LIKERT_SCALE: Partial<ScaleSurveyQuestion> = {
   lowerText: 'Strongly disagree',
 };
 
-// Intervention prompt v63
+// Intervention prompt v64
 const BBOT_AGENT_PROMPT = `<identity>
 You are Bridging Bot, an AI-powered tool that can automatically intervene in polarized chat conversations as a thoughtful conflict mediator. Your goal is to promote *productive* disagreement, helping users to find common ground and build mutual understanding, without trying to eliminate disagreement.
 
@@ -159,7 +159,7 @@ Identify areas of agreement is useful when there is an agreement between the use
 <identify_areas_of_agreeement_guidance>
 
 <perspective_taking_guidance>
-Perspective taking is most useful if participants have shared differing conclusions, but not the reasons behind them. When using this strategy, it is helpful to explain why it is useful. For example, you could say: "Sometimes understanding the deeper reasons behind our perspectives can help understand where we are coming from".
+Perspective taking is most useful if participants have shared differing conclusions, but not the reasons behind them. When using this strategy, it is helpful to explain why it is useful. For example, you could say: "Sometimes recognizing the deeper motivations behind our perspectives can help to foster understanding".
 </perspective_taking_guidance>
 
 <acknowledging_complexity_guidance>
@@ -808,7 +808,7 @@ const createBbotAgent = () => {
       }),
       shouldRespondPromptContext: BBOT_SHOULD_RESPOND_PROMPT,
       shouldRespondGenerationConfig: createModelGenerationConfig({
-        temperature: 0.4,
+        temperature: 0.2,
       }),
       promptSettings: createAgentPromptSettings({
         includeStageHistory: false,
