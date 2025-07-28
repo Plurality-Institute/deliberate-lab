@@ -26,6 +26,17 @@ export const mirrorPresenceToFirestore = database.onValueWritten(
   },
   async (event) => {
     const {experimentId, participantPrivateId, connectionId} = event.params;
+    if (
+      !(
+        event.params.connectionId &&
+        event.params.participantPrivateId &&
+        event.params.experimentId
+      )
+    ) {
+      // v2 triggers fire on any write to the prefix, even if the params are null. Do not process those
+      // writes.
+      return null;
+    }
 
     if (connectionId.startsWith('_')) return null;
 
