@@ -26,7 +26,7 @@ beforeAll(async () => {
 });
 
 // skipped so it doesn't run by default, since this is a long-running test.
-describe('handleAutomaticTransfer integration (emulator)', () => {
+xdescribe('handleAutomaticTransfer integration (emulator)', () => {
   const runs = 20;
   for (const runIdx of Array.from({length: runs}).keys()) {
     it(`performs concurrent transfers w/o races, and with balanced cohort assignment (run ${runIdx + 1})`, async () => {
