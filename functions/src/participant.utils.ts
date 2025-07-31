@@ -10,7 +10,6 @@ import {
   createMetadataConfig,
   SurveyStagePublicData,
   SurveyQuestionKind,
-  MultipleChoiceSurveyAnswer,
 } from '@deliberation-lab/utils';
 import {completeStageAsAgentParticipant} from './agent.utils';
 import {getFirestoreActiveParticipants} from './utils/firestore';
@@ -250,6 +249,30 @@ export async function handleAutomaticTransfer(
   // Group participants by survey answers
   const answerGroups: Record<string, ParticipantProfileExtended[]> = {};
   for (const connectedParticipant of connectedParticipants) {
+    // Re-read the participant document by ID to ensure up-to-date transfer status and to lock record
+    const participantDoc = await transaction.get(
+      firestore
+        .collection('experiments')
+        .doc(experimentId)
+        .collection('participants')
+        .doc(connectedParticipant.privateId),
+    );
+    const upToDateParticipant = participantDoc.data() as
+      | ParticipantProfileExtended
+      | undefined;
+    if (!upToDateParticipant) {
+      console.log(
+        `Participant ${connectedParticipant.publicId} not found in Firestore, skipping`,
+      );
+      continue;
+    }
+    if (upToDateParticipant.transferCohortId) {
+      console.log(
+        `Participant ${connectedParticipant.publicId} is already assigned to a transfer cohort, skipping`,
+      );
+      continue;
+    }
+
     const surveyAnswers =
       surveyStageData.participantAnswerMap[connectedParticipant.publicId];
     if (!surveyAnswers) {
@@ -278,7 +301,7 @@ export async function handleAutomaticTransfer(
     if (!answerGroups[key]) {
       answerGroups[key] = [];
     }
-    answerGroups[key].push(connectedParticipant);
+    answerGroups[key].push(upToDateParticipant);
     console.log(
       `Participant ${connectedParticipant.publicId} has answer ${key}`,
     );
@@ -316,28 +339,14 @@ export async function handleAutomaticTransfer(
       return null;
     }
 
-    cohortParticipants.push(...matchingParticipants.slice(0, requiredCount));
+    const participantsToTransfer = matchingParticipants.slice(0, requiredCount);
+    cohortParticipants.push(...participantsToTransfer);
   }
 
   // Select experimental condition if conditionProbabilities is provided
   let selectedCondition: string | undefined = undefined;
   if (stageConfig.conditionProbabilities) {
-    const conditionProbabilities = stageConfig.conditionProbabilities;
-    const conditions = Object.keys(conditionProbabilities);
-    const probs = Object.values(conditionProbabilities);
-    const sum = probs.reduce((a, b) => a + b, 0);
-    if (Math.abs(sum - 1) > 1e-6) {
-      throw new Error('conditionProbabilities must sum to 1');
-    }
-    const r = Math.random();
-    let acc = 0;
-    for (let i = 0; i < conditions.length; i++) {
-      acc += probs[i]; // builds a cdf over probs
-      if (r < acc) {
-        selectedCondition = conditions[i];
-        break;
-      }
-    }
+    selectedCondition = selectConditionByProbability(stageConfig);
   }
 
   // Create a new cohort and transfer participants
@@ -359,7 +368,7 @@ export async function handleAutomaticTransfer(
   const cohortConfig = createCohortConfig({
     id: generateId(),
     metadata: createMetadataConfig({
-      creator: experimentCreator, // set to experiment creator
+      creator: experimentCreator,
       dateCreated: Timestamp.now(),
       dateModified: Timestamp.now(),
       name: conditionName,
@@ -397,6 +406,26 @@ export async function handleAutomaticTransfer(
   participant.transferCohortId = cohortConfig.id;
 
   return {currentStageId: stageConfig.id, endExperiment: false};
+}
+
+export function selectConditionByProbability(stageConfig: TransferStageConfig) {
+  const conditionProbabilities = stageConfig.conditionProbabilities!;
+  const conditions = Object.keys(conditionProbabilities);
+  const probs = Object.values(conditionProbabilities);
+  const sum = probs.reduce((a, b) => a + b, 0);
+  if (Math.abs(sum - 1) > 1e-6) {
+    throw new Error('conditionProbabilities must sum to 1');
+  }
+  const r = Math.random();
+  let acc = 0;
+  for (let i = 0; i < conditions.length; i++) {
+    acc += probs[i]; // builds a cdf over probs
+    if (r < acc) {
+      return conditions[i];
+    }
+  }
+  return 'fell_through';
+  // return conditions[conditions.length - 1]; // fallback in case of rounding errors
 }
 
 /** Fetch a participant record by experimentId and participantId. */
