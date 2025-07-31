@@ -424,8 +424,7 @@ export function selectConditionByProbability(stageConfig: TransferStageConfig) {
       return conditions[i];
     }
   }
-  return 'fell_through';
-  // return conditions[conditions.length - 1]; // fallback in case of rounding errors
+  return conditions[conditions.length - 1]; // fallback in case of rounding errors
 }
 
 /** Fetch a participant record by experimentId and participantId. */
