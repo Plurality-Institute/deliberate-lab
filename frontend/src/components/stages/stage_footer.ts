@@ -51,12 +51,13 @@ export class Footer extends MobxLitElement {
       this.isLoadingNext = false;
     };
 
+    // Never disable the End Experiment button.
     const preventNextClick =
-      this.disabled || this.participantService.disableStage;
+      !isLast && (this.disabled || this.participantService.disableStage);
 
     return html`
       <pr-button
-        variant=${this.disabled ? 'default' : 'tonal'}
+        variant=${preventNextClick ? 'default' : 'tonal'}
         ?disabled=${preventNextClick}
         ?loading=${this.isLoadingNext}
         @click=${handleNext}

@@ -62,7 +62,10 @@ export class InfoView extends MobxLitElement {
         (acc, char) => acc + char.charCodeAt(0),
         0,
       );
-      const shuffled: string[] = shuffle(this.stage.infoTextsRandomized, seed);
+      const shuffled: string[] = shuffle(
+        this.stage.infoTextsRandomized.slice(),
+        seed,
+      );
       const selected: string =
         Array.isArray(shuffled) && shuffled.length > 0 ? shuffled[0] : '';
       infoLinesJoined = selected.replaceAll('\n', '\n\n'); // I guess we want double newlines?

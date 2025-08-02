@@ -101,11 +101,7 @@ export const scrubStalePresence = onSchedule(
     const dbUrl = `https://${dbInstance}.firebaseio.com`;
     const root = admin.app().database(dbUrl).ref('status');
     const usersSnapshot = await root.get();
-    const userSnapshots: admin.database.DataSnapshot[] = [];
-    for (const userSnapshot of Object.values(usersSnapshot.val() || {})) {
-      userSnapshots.push(userSnapshot as admin.database.DataSnapshot);
-    }
-    for (const userSnapshot of userSnapshots) {
+    usersSnapshot.forEach((userSnapshot) => {
       const connSnapshots: admin.database.DataSnapshot[] = [];
       userSnapshot.forEach((connSnapshot) => {
         connSnapshots.push(connSnapshot);
@@ -134,6 +130,6 @@ export const scrubStalePresence = onSchedule(
           connSnapshot.ref.remove();
         }
       }
-    }
+    });
   },
 );
