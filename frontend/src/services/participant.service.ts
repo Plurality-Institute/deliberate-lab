@@ -364,14 +364,15 @@ export class ParticipantService extends Service {
         redirectCode = config.bootedRedirectCode;
       }
 
-      // Navigate to Prolific with completion code
       window.location.href = PROLIFIC_COMPLETION_URL_PREFIX + redirectCode;
       return;
     }
 
     // Otherwise, route to main participant page
     if (!this.experimentId || !this.profile) return;
-    this.currentStageViewId = undefined;
+    runInAction(() => {
+      this.currentStageViewId = undefined;
+    });
   }
 
   /** Complete waiting phase for stage. */
@@ -398,14 +399,14 @@ export class ParticipantService extends Service {
       },
     );
 
-    runInAction(() => {
-      if (result.endExperiment) {
-        this.routeToEndExperiment(ParticipantStatus.SUCCESS);
-      } else if (result.currentStageId) {
+    if (result.endExperiment) {
+      this.routeToEndExperiment(ParticipantStatus.SUCCESS);
+    } else if (result.currentStageId !== undefined) {
+      runInAction(() => {
         // Route to next stage
-        this.currentStageViewId = result.currentStageId;
-      }
-    });
+        this.currentStageViewId = result.currentStageId ?? undefined;
+      });
+    }
 
     return result.currentStageId ?? '';
   }
