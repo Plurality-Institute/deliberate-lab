@@ -740,11 +740,11 @@ const BBOT_TRANSFER_STAGE = createTransferStage({
   },
 });
 
-const BBOT_CHAT_INTRO_TEXT = `In the next stage, you will have a chat conversation about abortion policy with another participant who may see the issue differently.
+const BBOT_CHAT_INTRO_TEXT = `Next, you will have a chat conversation about abortion policy with another participant who may see the issue differently.
 
-The chat is anonymous and will last 10 minutes.
-
-**In your first message, please share a brief statement of your view on abortion policy (1-2 sentences is plenty). What, if anything, should the law allow or restrict, and why?**`;
+- The chat is anonymous and will last 10 minutes.
+- Please do not consult artificial intelligence, large language models (e.g., ChatGPT, Claude, Gemini), or other external tools. Respond in your own words.
+- **In your first message, share a brief statement of your view on abortion policy (1-2 sentences). What should the law allow or restrict, and why?**`;
 
 const BBOT_CHAT_INTRO_STAGE = createInfoStage({
   id: 'chat_intro',
@@ -754,7 +754,7 @@ const BBOT_CHAT_INTRO_STAGE = createInfoStage({
 
 const CHAT_DESCRIPTION = `You are now in a chat conversation with another participant.
 
-To start the conversation, please share a brief statement of your view on abortion policy (1-2 sentences). What, if anything, should the law allow or restrict, and why?
+To start the conversation, please share a brief statement of your view on abortion policy (1-2 sentences). What should the law allow or restrict, and why?
 
 After sending your first message, please read your partner's messages and continue the discussion.`;
 
