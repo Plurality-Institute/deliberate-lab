@@ -39,7 +39,7 @@ import {
 export const BBOT_METADATA = createMetadataConfig({
   name: 'Bridging Bot Lab: Reproductive Rights Chat',
   publicName: 'Reproductive Rights Chat',
-  description: 'A discussion about reprodictive rights',
+  description: 'A discussion about reproductive rights',
 });
 
 export const BBOT_CHAT_STAGE_ID = 'bbot_chat';
