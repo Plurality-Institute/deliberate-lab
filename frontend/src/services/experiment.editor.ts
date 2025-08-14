@@ -7,10 +7,6 @@ import {
   StageConfig,
   StageKind,
   createExperimentConfig,
-  createMetadataConfig,
-  createPermissionsConfig,
-  createProlificConfig,
-  generateId,
 } from '@deliberation-lab/utils';
 import {Timestamp} from 'firebase/firestore';
 import {computed, makeObservable, observable, action, runInAction} from 'mobx';
@@ -115,6 +111,11 @@ export class ExperimentEditor extends Service {
       ...this.experiment.prolificConfig,
       ...config,
     };
+  }
+
+  @action
+  updateCollectBehaviorData(enabled: boolean) {
+    this.experiment.collectBehaviorData = enabled;
   }
 
   @action
