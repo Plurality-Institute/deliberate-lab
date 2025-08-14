@@ -81,6 +81,8 @@ export class ExperimentService extends Service {
             // Keep a local mirror of the flag if present
             this.collectBehaviorData =
               (doc.data() as Experiment).collectBehaviorData === true;
+
+            this.isLoading = false;
           });
         },
       ),

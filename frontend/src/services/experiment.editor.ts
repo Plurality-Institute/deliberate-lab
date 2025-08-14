@@ -113,6 +113,7 @@ export class ExperimentEditor extends Service {
     };
   }
 
+  @action
   updateCollectBehaviorData(enabled: boolean) {
     this.experiment.collectBehaviorData = enabled;
   }
