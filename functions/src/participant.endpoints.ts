@@ -20,9 +20,10 @@ import {
 } from './participant.utils';
 
 import * as functions from 'firebase-functions';
-import {onCall} from 'firebase-functions/v2/https';
+import {CallableRequest, onCall} from 'firebase-functions/v2/https';
 import {app} from './app';
 import {AuthGuard} from './utils/auth-guard';
+import {getBrowserVersion} from './utils/client';
 import {
   checkConfigDataUnionOnPath,
   isUnionError,
@@ -48,7 +49,7 @@ export const createParticipant = onCall(async (request) => {
     handleCreateParticipantValidationErrors(data);
   }
 
-  return await createParticipantInternal(data);
+  return await createParticipantInternal(data, request);
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -633,11 +634,14 @@ export const checkOrCreateParticipant = onCall(async (request) => {
   }
 
   // No existing participant, create as normal
-  const result = await createParticipantInternal(participantData);
+  const result = await createParticipantInternal(participantData, request);
   return {exists: false, id: result.id};
 });
 
-async function createParticipantInternal(data: CreateParticipantData) {
+async function createParticipantInternal(
+  data: CreateParticipantData,
+  request: CallableRequest,
+) {
   // Create initial participant config
   const participantConfig = createParticipantProfileExtended({
     currentCohortId: data.cohortId,
@@ -663,6 +667,9 @@ async function createParticipantInternal(data: CreateParticipantData) {
   await new Promise((resolve) => {
     setTimeout(resolve, Math.random() * 2000);
   });
+
+  // Store minimal browser info directly on participant record if available
+  const browserVersion = getBrowserVersion(request);
 
   // Run document write as transaction to ensure consistency
   await app.firestore().runTransaction(async (transaction) => {
@@ -690,8 +697,10 @@ async function createParticipantInternal(data: CreateParticipantData) {
 
     // Set current stage ID in participant config
     participantConfig.currentStageId = experiment.stageIds[0];
+    if (browserVersion) {
+      participantConfig.browserVersion = browserVersion;
+    }
 
-    // Write new participant document
     transaction.set(document, participantConfig);
   });
 
