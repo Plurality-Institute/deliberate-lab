@@ -51,6 +51,8 @@ export interface ParticipantProfileExtended extends ParticipantProfile {
   privateId: string;
   // If null, operated by human (otherwise, specifies agent persona, model)
   agentConfig: ProfileAgentConfig | null;
+  // Minimal browser identifier, e.g., "Chrome 126"; null if unavailable
+  browserVersion: string | null;
 }
 
 export interface ProgressTimestamps {
@@ -154,6 +156,7 @@ export function createParticipantProfileExtended(
     anonymousProfiles: {},
     connected: config.agentConfig ? true : false,
     agentConfig: config.agentConfig ?? null,
+    browserVersion: config.browserVersion ?? null,
   };
 }
 
