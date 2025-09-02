@@ -264,7 +264,7 @@ Keep in mind:
 const BBOT_CONSENT = `# Consent to Participate in Research Study
 
 **TITLE:**
-> Large Language Models for Bridging and De-escalation in Online Conversations: DeliberateLab Study
+> Online Chat Study about Reproductive Rights
 
 **PROTOCOL NO.:**
 > NA
@@ -275,9 +275,8 @@ const BBOT_CONSENT = `# Consent to Participate in Research Study
 
 **INVESTIGATOR:**
 > Jeffrey Fossett, BA, AM
-> 10 Agassiz Street
-> Apartment 32
-> Cambridge, Massachusetts 02140
+> 60 29th Street #411
+> San Francisco, CA 94110
 > United States
 
 **STUDY-RELATED PHONE NUMBER(S):**
@@ -312,7 +311,7 @@ In total, the study will take approximately **22 minutes to complete.**
 
 If you finish both surveys and the chat, you will receive the amount shown in Prolific ($5.50). If you leave the study early, you will not be compensated.
 
-A single individual may not participate in this study more than once. You will be ineligible for payment if we detect that you attempted to participate a second time.
+A single individual may not participate in this study more than once, and may not use automation software, large language models (LLMs), or bots to answer surveys or compose messages. You will be ineligible for payment if we detect that you attempted to participate a second time.
 
 # Possible Risks and Benefits
 
@@ -325,15 +324,15 @@ You may or may not receive direct benefit from taking part in this study. A poss
 
 # Privacy and Confidentiality
 
-The researchers listed above including the sponsor will be able to see and analyze the content of your messages, as well as your survey responses. This information will never be shared outside of the research team, except in anonymized, aggregate form in academic publications. The Institutional Review Board (IRB) that reviewed this research may also have access to the data collected.
+The researchers listed above including the sponsor will be able to see and analyze the content of your messages, your survey responses, and the timing of your mouse movements and keystrokes. This information will never be shared outside of the research team, except in anonymized, aggregate form in academic publications. The Institutional Review Board (IRB) that reviewed this research may also have access to the data collected.
 
 Your privacy and confidentiality of your responses are of paramount importance to us. We do not collect information about your identity, and we cannot re-contact you except through the Prolific platform.
 
 # Participant's Rights
 
-Participation is voluntary. You are free to withdraw from the study at any time by closing your browser window.
-You may request that your data be deleted at any time before publication.
-You will be shown a short debrief after the study explaining the research conditions and purpose of the study.
+- Participation is voluntary. You are free to withdraw from the study at any time by closing your browser window.
+- You may request that your data be deleted at any time before publication.
+- You will be shown a short debrief after the study explaining the research conditions and purpose of the study.
 
 # Contact Details
 
@@ -347,7 +346,7 @@ This research is being overseen by WCG IRB. An IRB is a group of people who perf
 
 If you have any questions or concerns, or would like us to remove your data from our database, please contact Jeffrey Fossett at <jeff@plurality.institute>.
 
-Please protect your privacy. If you agree to participate, please do not share anything that could identify you personally (e.g., real name, email, phone number, social‑media handle) in the chat or surveys.
+Please protect your privacy. If you agree to participate, please do not share anything that could identify you personally (e.g., real name, email, phone number, social media handle) in the chat or surveys.
 
 By selecting “I agree to participate” below, you certify that:
 
