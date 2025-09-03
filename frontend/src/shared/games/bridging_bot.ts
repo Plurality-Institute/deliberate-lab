@@ -733,9 +733,9 @@ const BBOT_TRANSFER_STAGE = createTransferStage({
     includeAllParticipantsInCohortCount: false,
   }),
   conditionProbabilities: {
-    control: 0.3334, // No moderator message
-    static: 0.3333, // Standard pre-written message
-    bot: 0.3333, // AI moderation message
+    control: 0.5, // No moderator message
+    bot: 0.5, // AI moderation message
+    // no static control
   },
 });
 
