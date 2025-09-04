@@ -16,7 +16,7 @@ import {AuthService} from '../../services/auth.service';
 import {HomeService} from '../../services/home.service';
 import {Pages, RouterService} from '../../services/router.service';
 
-import {StageConfig} from '@deliberation-lab/utils';
+import {ParticipantStatus, StageConfig} from '@deliberation-lab/utils';
 import {ExperimentManager} from '../../services/experiment.manager';
 
 import {styles} from './cohort_list.scss';
@@ -139,9 +139,29 @@ export class Component extends MobxLitElement {
       `;
     }
 
+    // Hide finished cohorts for experiments using experimental conditions
+    const visibleCohorts = this.experimentManager.cohortList.filter(
+      (cohort) => {
+        if (!this.experimentManager.hideCompletedCohorts) return true;
+        const hasCondition =
+          !!cohort.experimentalCondition &&
+          cohort.experimentalCondition.trim().length > 0;
+        if (!hasCondition) return true;
+        const participants = this.experimentManager.getCohortParticipants(
+          cohort.id,
+          true,
+        );
+        if (participants.length === 0) return true; // keep empty cohorts visible
+        const allCompleted = participants.every(
+          (p) => p.currentStatus === ParticipantStatus.SUCCESS,
+        );
+        return !allCompleted;
+      },
+    );
+
     return html`
       <div class="content">
-        ${this.experimentManager.cohortList
+        ${visibleCohorts
           .slice()
           .sort((a, b) => {
             const nameComparison = a.metadata.name.localeCompare(

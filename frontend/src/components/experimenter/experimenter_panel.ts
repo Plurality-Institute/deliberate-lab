@@ -186,6 +186,7 @@ export class Panel extends MobxLitElement {
     const showCohortList = this.experimentManager.showCohortList;
     const showCohortEditor = this.experimentManager.showCohortEditor;
     const hideLockedCohorts = this.experimentManager.hideLockedCohorts;
+    const hideCompletedCohorts = this.experimentManager.hideCompletedCohorts;
     const expandAllCohorts = this.experimentManager.expandAllCohorts;
 
     return html`
@@ -223,6 +224,27 @@ export class Panel extends MobxLitElement {
             </pr-icon-button>
             <div>
               ${hideLockedCohorts ? 'Show all cohorts' : 'Hide locked cohorts'}
+            </div>
+          </div>
+          <div
+            class="checkbox-wrapper"
+            @click=${() => {
+              this.experimentManager.setHideCompletedCohorts(
+                !hideCompletedCohorts,
+              );
+            }}
+          >
+            <pr-icon-button
+              color="tertiary"
+              size="medium"
+              variant="default"
+              icon=${hideCompletedCohorts ? 'checklist_rtl' : 'checklist'}
+            >
+            </pr-icon-button>
+            <div>
+              ${hideCompletedCohorts
+                ? 'Show completed cohorts'
+                : 'Hide completed cohorts'}
             </div>
           </div>
           <div

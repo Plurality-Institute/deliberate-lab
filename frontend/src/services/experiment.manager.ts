@@ -127,6 +127,8 @@ export class ExperimentManager extends Service {
   @observable showParticipantPreview = true;
   @observable hideLockedCohorts = false;
   @observable expandAllCohorts = true;
+  // Hide cohorts where an experimental condition is set and all participants completed
+  @observable hideCompletedCohorts = true;
 
   // Copy of cohort being edited in settings dialog
   @observable cohortEditing: CohortConfig | undefined = undefined;
@@ -221,6 +223,7 @@ export class ExperimentManager extends Service {
     this.showParticipantPreview = true;
     this.hideLockedCohorts = false;
     this.expandAllCohorts = true;
+    this.hideCompletedCohorts = true;
     this.cohortEditing = undefined;
     this.unsubscribeAll();
   }
@@ -279,6 +282,11 @@ export class ExperimentManager extends Service {
   @action
   setExpandAllCohorts(expandAllCohorts: boolean) {
     this.expandAllCohorts = expandAllCohorts;
+  }
+
+  @action
+  setHideCompletedCohorts(hideCompletedCohorts: boolean) {
+    this.hideCompletedCohorts = hideCompletedCohorts;
   }
 
   @action
