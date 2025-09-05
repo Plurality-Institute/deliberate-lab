@@ -188,6 +188,8 @@ export class Panel extends MobxLitElement {
     const hideLockedCohorts = this.experimentManager.hideLockedCohorts;
     const hideCompletedCohorts = this.experimentManager.hideCompletedCohorts;
     const expandAllCohorts = this.experimentManager.expandAllCohorts;
+    const hideStaleDisconnected =
+      this.experimentManager.hideStaleDisconnectedParticipants;
 
     return html`
       <div class="main">
@@ -263,6 +265,27 @@ export class Panel extends MobxLitElement {
             <div>${expandAllCohorts ? 'Collapse' : 'Expand'} all cohorts</div>
           </div>
           <div class="header">Cohort Editor</div>
+          <div
+            class="checkbox-wrapper"
+            @click=${() => {
+              this.experimentManager.setHideStaleDisconnectedParticipants(
+                !hideStaleDisconnected,
+              );
+            }}
+          >
+            <pr-icon-button
+              color="tertiary"
+              size="medium"
+              variant="default"
+              icon=${hideStaleDisconnected ? 'visibility_off' : 'visibility'}
+            >
+            </pr-icon-button>
+            <div>
+              ${hideStaleDisconnected
+                ? 'Show stale disconnects'
+                : 'Hide stale disconnects (> 4h)'}
+            </div>
+          </div>
           <div
             class="checkbox-wrapper"
             @click=${() => {

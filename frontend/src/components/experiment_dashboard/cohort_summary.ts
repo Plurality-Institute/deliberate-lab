@@ -23,6 +23,10 @@ import {
   ParticipantStatus,
   StageKind,
 } from '@deliberation-lab/utils';
+import {
+  getCurrentStageStartTime,
+  isDisconnectedUnfinishedParticipant,
+} from '../../shared/participant.utils';
 import {getCohortDescription, getCohortName} from '../../shared/cohort.utils';
 
 import {styles} from './cohort_summary.scss';
@@ -200,6 +204,23 @@ export class CohortSummary extends MobxLitElement {
       this.cohort.id,
     );
 
+    // Hide disconnected participants who have been in their stage > 4 hours
+    const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
+    const now = Date.now();
+    const visibleParticipants = !this.experimentManager
+      .hideStaleDisconnectedParticipants
+      ? participants
+      : participants.filter((p) => {
+          if (!isDisconnectedUnfinishedParticipant(p)) return true;
+          const start = getCurrentStageStartTime(
+            p,
+            this.experimentService.stageIds,
+          );
+          if (!start) return true;
+          const startMs = start.seconds * 1000;
+          return now - startMs <= FOUR_HOURS_MS;
+        });
+
     if (participants.length === 0) {
       return html` <div class="empty-message">No participants yet.</div> `;
     }
@@ -216,7 +237,7 @@ export class CohortSummary extends MobxLitElement {
 
     return html`
       <div class="body">
-        ${participants
+        ${visibleParticipants
           .slice()
           .sort((a, b) => {
             if (isTransferTimeout(a)) {
