@@ -31,6 +31,10 @@ import {ExperimentManager} from '../../services/experiment.manager';
 import {ExperimentService} from '../../services/experiment.service';
 
 import {styles} from './cohort_editor.scss';
+import {
+  getCurrentStageStartTime,
+  isDisconnectedUnfinishedParticipant,
+} from '../../shared/participant.utils';
 
 /** Editor for current cohort (in experiment dashboard) */
 @customElement('cohort-editor')
@@ -163,8 +167,25 @@ export class Component extends MobxLitElement {
     actionBar: TemplateResult,
     emptyMessage = 'No participants yet',
   ) {
+    // Optionally hide disconnected participants who have been idle > 4 hours
+    const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
+    const now = Date.now();
+    const visibleParticipants = !this.experimentManager
+      .hideStaleDisconnectedParticipants
+      ? participants
+      : participants.filter((p) => {
+          if (!isDisconnectedUnfinishedParticipant(p)) return true;
+          const start = getCurrentStageStartTime(
+            p,
+            this.experimentService.stageIds,
+          );
+          if (!start) return true;
+          const startMs = start.seconds * 1000;
+          return now - startMs <= FOUR_HOURS_MS;
+        });
+
     const renderEmptyMessage = () => {
-      if (participants.length === 0) {
+      if (visibleParticipants.length === 0) {
         return html` <div class="table-row">${emptyMessage}</div> `;
       }
       return nothing;
@@ -188,7 +209,7 @@ export class Component extends MobxLitElement {
         </div>
         <div class="table-body">
           ${renderEmptyMessage()}
-          ${participants
+          ${visibleParticipants
             .slice()
             .sort((a, b) => {
               if (isTransferTimeout(a)) {
