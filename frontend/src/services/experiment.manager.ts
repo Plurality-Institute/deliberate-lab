@@ -129,6 +129,8 @@ export class ExperimentManager extends Service {
   @observable expandAllCohorts = true;
   // Hide cohorts where an experimental condition is set and all participants completed
   @observable hideCompletedCohorts = true;
+  // Hide disconnected participants who have been idle > 4 hours
+  @observable hideStaleDisconnectedParticipants = true;
 
   // Copy of cohort being edited in settings dialog
   @observable cohortEditing: CohortConfig | undefined = undefined;
@@ -224,6 +226,7 @@ export class ExperimentManager extends Service {
     this.hideLockedCohorts = false;
     this.expandAllCohorts = true;
     this.hideCompletedCohorts = true;
+    this.hideStaleDisconnectedParticipants = true;
     this.cohortEditing = undefined;
     this.unsubscribeAll();
   }
@@ -287,6 +290,11 @@ export class ExperimentManager extends Service {
   @action
   setHideCompletedCohorts(hideCompletedCohorts: boolean) {
     this.hideCompletedCohorts = hideCompletedCohorts;
+  }
+
+  @action
+  setHideStaleDisconnectedParticipants(hide: boolean) {
+    this.hideStaleDisconnectedParticipants = hide;
   }
 
   @action
