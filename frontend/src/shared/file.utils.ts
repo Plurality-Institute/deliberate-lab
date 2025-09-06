@@ -104,131 +104,131 @@ export async function getExperimentDownload(
   firestore: Firestore,
   experimentId: string,
 ) {
-  // Get experiment config from experimentId
-  const experimentConfig = (
-    await getDoc(doc(firestore, 'experiments', experimentId))
-  ).data() as Experiment;
+  // Fetch core collections in parallel
+  const [
+    experimentSnap,
+    stagesSnap,
+    participantsSnap,
+    agentsSnap,
+    cohortsSnap,
+  ] = await Promise.all([
+    getDoc(doc(firestore, 'experiments', experimentId)),
+    getDocs(collection(firestore, 'experiments', experimentId, 'stages')),
+    getDocs(collection(firestore, 'experiments', experimentId, 'participants')),
+    getDocs(collection(firestore, 'experiments', experimentId, 'agents')),
+    getDocs(collection(firestore, 'experiments', experimentId, 'cohorts')),
+  ]);
 
-  // Create experiment download using experiment config
+  // Create experiment download
+  const experimentConfig = experimentSnap.data() as Experiment;
   const experimentDownload = createExperimentDownload(experimentConfig);
 
-  // For each experiment stage config, add to ExperimentDownload
-  const stageConfigs = (
-    await getDocs(collection(firestore, 'experiments', experimentId, 'stages'))
-  ).docs.map((doc) => doc.data() as StageConfig);
-  for (const stage of stageConfigs) {
-    experimentDownload.stageMap[stage.id] = stage;
-  }
-
-  // For each participant, add ParticipantDownload
-  const profiles = (
-    await getDocs(
-      collection(firestore, 'experiments', experimentId, 'participants'),
-    )
-  ).docs.map((doc) => doc.data() as ParticipantProfileExtended);
-  for (const profile of profiles) {
-    // Create new ParticipantDownload
-    const participantDownload = createParticipantDownload(profile);
-
-    // For each stage answer, add to ParticipantDownload map
-    const stageAnswers = (
-      await getDocs(
-        collection(
-          firestore,
-          'experiments',
-          experimentId,
-          'participants',
-          profile.privateId,
-          'stageData',
-        ),
-      )
-    ).docs.map((doc) => doc.data() as StageParticipantAnswer);
-    for (const stage of stageAnswers) {
-      participantDownload.answerMap[stage.id] = stage;
-    }
-
-    // Fetch behavior events (ordered by server timestamp)
-    const behaviorDocs = await getDocs(
-      query(
-        collection(
-          firestore,
-          'experiments',
-          experimentId,
-          'participants',
-          profile.privateId,
-          'behavior',
-        ),
-        orderBy('timestamp', 'asc'),
-      ),
-    );
-    participantDownload.behavior = behaviorDocs.docs.map(
-      (doc) => doc.data() as BehaviorEvent,
-    );
-    // Add ParticipantDownload to ExperimentDownload
-    experimentDownload.participantMap[profile.publicId] = participantDownload;
-  }
-
-  // For each agent, add AgentDataObject
-  const agentCollection = collection(
-    firestore,
-    'experiments',
-    experimentId,
-    'agents',
-  );
-  const agents = (await getDocs(agentCollection)).docs.map(
-    (agent) => agent.data() as AgentPersonaConfig,
-  );
-  for (const persona of agents) {
-    const participantPrompts = (
-      await getDocs(
-        collection(
-          firestore,
-          'experiments',
-          experimentId,
-          'agents',
-          persona.id,
-          'participantPrompts',
-        ),
-      )
-    ).docs.map((doc) => doc.data() as AgentParticipantPromptConfig);
-    const chatPrompts = (
-      await getDocs(
-        collection(
-          firestore,
-          'experiments',
-          experimentId,
-          'agents',
-          persona.id,
-          'chatPrompts',
-        ),
-      )
-    ).docs.map((doc) => doc.data() as AgentChatPromptConfig);
-    const agentObject: AgentDataObject = {
-      persona,
-      participantPromptMap: {},
-      chatPromptMap: {},
-    };
-    participantPrompts.forEach((prompt) => {
-      agentObject.participantPromptMap[prompt.id] = prompt;
+  // Stage configs
+  stagesSnap.docs
+    .map((d) => d.data() as StageConfig)
+    .forEach((stage) => {
+      experimentDownload.stageMap[stage.id] = stage;
     });
-    chatPrompts.forEach((prompt) => {
-      agentObject.chatPromptMap[prompt.id] = prompt;
-    });
-    // Add to ExperimentDownload
-    experimentDownload.agentMap[persona.id] = agentObject;
-  }
 
-  // For each cohort, add CohortDownload
-  const cohorts = (
-    await getDocs(collection(firestore, 'experiments', experimentId, 'cohorts'))
-  ).docs.map((cohort) => cohort.data() as CohortConfig);
-  for (const cohort of cohorts) {
-    // Create new CohortDownload
-    const cohortDownload = createCohortDownload(cohort);
+  // Participants: fetch stage answers + behavior in parallel per participant
+  const profiles = participantsSnap.docs.map(
+    (d) => d.data() as ParticipantProfileExtended,
+  );
+  await Promise.all(
+    profiles.map(async (profile) => {
+      const participantDownload = createParticipantDownload(profile);
+      const [answersSnap, behaviorSnap] = await Promise.all([
+        getDocs(
+          collection(
+            firestore,
+            'experiments',
+            experimentId,
+            'participants',
+            profile.privateId,
+            'stageData',
+          ),
+        ),
+        getDocs(
+          query(
+            collection(
+              firestore,
+              'experiments',
+              experimentId,
+              'participants',
+              profile.privateId,
+              'behavior',
+            ),
+            orderBy('timestamp', 'asc'),
+          ),
+        ),
+      ]);
 
-    // For each public stage data, add to CohortDownload
-    const publicStageData = (
-      await getDocs(
+      answersSnap.docs
+        .map((d) => d.data() as StageParticipantAnswer)
+        .forEach((ans) => {
+          participantDownload.answerMap[ans.id] = ans;
+        });
+      participantDownload.behavior = behaviorSnap.docs.map(
+        (d) => d.data() as BehaviorEvent,
+      );
+
+      experimentDownload.participantMap[profile.publicId] = participantDownload;
+    }),
+  );
+
+  // Agents: fetch prompt subcollections in parallel per agent
+  const agents = agentsSnap.docs.map((d) => d.data() as AgentPersonaConfig);
+  await Promise.all(
+    agents.map(async (persona) => {
+      const [participantPromptsSnap, chatPromptsSnap] = await Promise.all([
+        getDocs(
+          collection(
+            firestore,
+            'experiments',
+            experimentId,
+            'agents',
+            persona.id,
+            'participantPrompts',
+          ),
+        ),
+        getDocs(
+          collection(
+            firestore,
+            'experiments',
+            experimentId,
+            'agents',
+            persona.id,
+            'chatPrompts',
+          ),
+        ),
+      ]);
+
+      const agentObject: AgentDataObject = {
+        persona,
+        participantPromptMap: {},
+        chatPromptMap: {},
+      };
+      participantPromptsSnap.docs
+        .map((d) => d.data() as AgentParticipantPromptConfig)
+        .forEach((prompt) => {
+          agentObject.participantPromptMap[prompt.id] = prompt;
+        });
+      chatPromptsSnap.docs
+        .map((d) => d.data() as AgentChatPromptConfig)
+        .forEach((prompt) => {
+          agentObject.chatPromptMap[prompt.id] = prompt;
+        });
+
+      experimentDownload.agentMap[persona.id] = agentObject;
+    }),
+  );
+
+  // Cohorts: fetch public stage data and chat logs in parallel
+  const cohorts = cohortsSnap.docs.map((d) => d.data() as CohortConfig);
+  await Promise.all(
+    cohorts.map(async (cohort) => {
+      const cohortDownload = createCohortDownload(cohort);
+      const publicStageSnap = await getDocs(
         collection(
           firestore,
           'experiments',
@@ -237,36 +237,50 @@ export async function getExperimentDownload(
           cohort.id,
           'publicStageData',
         ),
-      )
-    ).docs.map((doc) => doc.data() as StagePublicData);
-    for (const data of publicStageData) {
-      cohortDownload.dataMap[data.id] = data;
-      // If chat stage, add list of chat messages to CohortDownload
-      if (data.kind === StageKind.CHAT) {
-        const chatList = (
-          await getDocs(
-            query(
-              collection(
-                firestore,
-                'experiments',
-                experimentId,
-                'cohorts',
-                cohort.id,
-                'publicStageData',
-                data.id,
-                'chats',
-              ),
-              orderBy('timestamp', 'asc'),
-            ),
-          )
-        ).docs.map((doc) => doc.data() as ChatMessage);
-        cohortDownload.chatMap[data.id] = chatList;
-      }
-    }
+      );
 
-    // Add CohortDownload to ExperimentDownload
-    experimentDownload.cohortMap[cohort.id] = cohortDownload;
-  }
+      const publicStageData = publicStageSnap.docs.map(
+        (d) => d.data() as StagePublicData,
+      );
+      publicStageData.forEach((data) => {
+        cohortDownload.dataMap[data.id] = data;
+      });
+
+      // For chat stages, fetch chats concurrently
+      const chatStageIds = publicStageData
+        .filter((d) => d.kind === StageKind.CHAT)
+        .map((d) => d.id);
+      if (chatStageIds.length > 0) {
+        const chatSnaps = await Promise.all(
+          chatStageIds.map((stageId) =>
+            getDocs(
+              query(
+                collection(
+                  firestore,
+                  'experiments',
+                  experimentId,
+                  'cohorts',
+                  cohort.id,
+                  'publicStageData',
+                  stageId,
+                  'chats',
+                ),
+                orderBy('timestamp', 'asc'),
+              ),
+            ),
+          ),
+        );
+        chatSnaps.forEach((snap, idx) => {
+          const stageId = chatStageIds[idx];
+          cohortDownload.chatMap[stageId] = snap.docs.map(
+            (d) => d.data() as ChatMessage,
+          );
+        });
+      }
+
+      experimentDownload.cohortMap[cohort.id] = cohortDownload;
+    }),
+  );
 
   return experimentDownload;
 }

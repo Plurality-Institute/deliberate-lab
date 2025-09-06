@@ -54,6 +54,7 @@ import {
   testAgentParticipantPromptCallable,
   updateCohortMetadataCallable,
   writeExperimentCallable,
+  generateExperimentDownloadCallable,
 } from '../shared/callables';
 import {
   getCohortParticipants,
@@ -64,7 +65,6 @@ import {
   getChipNegotiationCSV,
   getChipNegotiationData,
   getChipNegotiationPlayerMapCSV,
-  getExperimentDownload,
   getParticipantData,
 } from '../shared/file.utils';
 import {
@@ -871,9 +871,10 @@ export class ExperimentManager extends Service {
     let data = {};
     const experimentId = this.sp.routerService.activeRoute.params['experiment'];
     if (experimentId) {
-      const result = await getExperimentDownload(
-        this.sp.firebaseService.firestore,
-        experimentId,
+      // Fetch assembled payload from cloud function to minimize client roundtrips
+      const result = await generateExperimentDownloadCallable(
+        this.sp.firebaseService.functions,
+        {experimentId},
       );
 
       if (result) {
