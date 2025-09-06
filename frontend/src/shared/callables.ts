@@ -549,3 +549,18 @@ export const addBehaviorEventsCallable = async (
   )(config);
   return data;
 };
+
+/** Experiment download (server-side assembly). */
+export const generateExperimentDownloadCallable = async (
+  functions: Functions,
+  config: {experimentId: string},
+) => {
+  const {data} = await httpsCallable<
+    {experimentId: string},
+    import('@deliberation-lab/utils').ExperimentDownload
+  >(
+    functions,
+    'generateExperimentDownload',
+  )(config);
+  return data;
+};
