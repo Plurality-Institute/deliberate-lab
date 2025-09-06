@@ -97,6 +97,41 @@ export function toCSV(text: string | null) {
   return text.replaceAll(',', '').replaceAll('\n', '');
 }
 
+// ----------------------------------------------------------------------------
+// Minimal concurrency helper to avoid overwhelming Firestore/network
+// ----------------------------------------------------------------------------
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  mapper: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let inFlight = 0;
+  let nextIndex = 0;
+  return await new Promise<R[]>((resolve, reject) => {
+    const launchNext = () => {
+      if (nextIndex >= items.length && inFlight === 0) {
+        resolve(results);
+        return;
+      }
+      while (inFlight < limit && nextIndex < items.length) {
+        const current = nextIndex++;
+        inFlight++;
+        mapper(items[current], current)
+          .then((res) => {
+            results[current] = res;
+          })
+          .catch(reject)
+          .finally(() => {
+            inFlight--;
+            launchNext();
+          });
+      }
+    };
+    launchNext();
+  });
+}
+
 // ****************************************************************************
 // EXPERIMENT DOWNLOAD JSON
 // ****************************************************************************
@@ -120,19 +155,17 @@ export async function getExperimentDownload(
     experimentDownload.stageMap[stage.id] = stage;
   }
 
-  // For each participant, add ParticipantDownload
+  // For each participant, add ParticipantDownload (parallel with limits)
   const profiles = (
     await getDocs(
       collection(firestore, 'experiments', experimentId, 'participants'),
     )
   ).docs.map((doc) => doc.data() as ParticipantProfileExtended);
-  for (const profile of profiles) {
-    // Create new ParticipantDownload
+  await mapWithConcurrency(profiles, 10, async (profile) => {
     const participantDownload = createParticipantDownload(profile);
 
-    // For each stage answer, add to ParticipantDownload map
-    const stageAnswers = (
-      await getDocs(
+    const [stageAnswersSnap, behaviorDocs] = await Promise.all([
+      getDocs(
         collection(
           firestore,
           'experiments',
@@ -141,32 +174,32 @@ export async function getExperimentDownload(
           profile.privateId,
           'stageData',
         ),
-      )
-    ).docs.map((doc) => doc.data() as StageParticipantAnswer);
-    for (const stage of stageAnswers) {
-      participantDownload.answerMap[stage.id] = stage;
-    }
-
-    // Fetch behavior events (ordered by server timestamp)
-    const behaviorDocs = await getDocs(
-      query(
-        collection(
-          firestore,
-          'experiments',
-          experimentId,
-          'participants',
-          profile.privateId,
-          'behavior',
-        ),
-        orderBy('timestamp', 'asc'),
       ),
-    );
+      getDocs(
+        query(
+          collection(
+            firestore,
+            'experiments',
+            experimentId,
+            'participants',
+            profile.privateId,
+            'behavior',
+          ),
+          orderBy('timestamp', 'asc'),
+        ),
+      ),
+    ]);
+
+    stageAnswersSnap.docs.forEach((d) => {
+      const stage = d.data() as StageParticipantAnswer;
+      participantDownload.answerMap[stage.id] = stage;
+    });
+
     participantDownload.behavior = behaviorDocs.docs.map(
       (doc) => doc.data() as BehaviorEvent,
     );
-    // Add ParticipantDownload to ExperimentDownload
     experimentDownload.participantMap[profile.publicId] = participantDownload;
-  }
+  });
 
   // For each agent, add AgentDataObject
   const agentCollection = collection(
@@ -178,9 +211,9 @@ export async function getExperimentDownload(
   const agents = (await getDocs(agentCollection)).docs.map(
     (agent) => agent.data() as AgentPersonaConfig,
   );
-  for (const persona of agents) {
-    const participantPrompts = (
-      await getDocs(
+  await mapWithConcurrency(agents, 8, async (persona) => {
+    const [participantPromptsSnap, chatPromptsSnap] = await Promise.all([
+      getDocs(
         collection(
           firestore,
           'experiments',
@@ -189,10 +222,8 @@ export async function getExperimentDownload(
           persona.id,
           'participantPrompts',
         ),
-      )
-    ).docs.map((doc) => doc.data() as AgentParticipantPromptConfig);
-    const chatPrompts = (
-      await getDocs(
+      ),
+      getDocs(
         collection(
           firestore,
           'experiments',
@@ -201,32 +232,31 @@ export async function getExperimentDownload(
           persona.id,
           'chatPrompts',
         ),
-      )
-    ).docs.map((doc) => doc.data() as AgentChatPromptConfig);
+      ),
+    ]);
     const agentObject: AgentDataObject = {
       persona,
       participantPromptMap: {},
       chatPromptMap: {},
     };
-    participantPrompts.forEach((prompt) => {
+    participantPromptsSnap.docs.forEach((d) => {
+      const prompt = d.data() as AgentParticipantPromptConfig;
       agentObject.participantPromptMap[prompt.id] = prompt;
     });
-    chatPrompts.forEach((prompt) => {
+    chatPromptsSnap.docs.forEach((d) => {
+      const prompt = d.data() as AgentChatPromptConfig;
       agentObject.chatPromptMap[prompt.id] = prompt;
     });
-    // Add to ExperimentDownload
     experimentDownload.agentMap[persona.id] = agentObject;
-  }
+  });
 
   // For each cohort, add CohortDownload
   const cohorts = (
     await getDocs(collection(firestore, 'experiments', experimentId, 'cohorts'))
   ).docs.map((cohort) => cohort.data() as CohortConfig);
-  for (const cohort of cohorts) {
-    // Create new CohortDownload
+  await mapWithConcurrency(cohorts, 6, async (cohort) => {
     const cohortDownload = createCohortDownload(cohort);
 
-    // For each public stage data, add to CohortDownload
     const publicStageData = (
       await getDocs(
         collection(
@@ -239,34 +269,45 @@ export async function getExperimentDownload(
         ),
       )
     ).docs.map((doc) => doc.data() as StagePublicData);
-    for (const data of publicStageData) {
-      cohortDownload.dataMap[data.id] = data;
-      // If chat stage, add list of chat messages to CohortDownload
-      if (data.kind === StageKind.CHAT) {
-        const chatList = (
-          await getDocs(
-            query(
-              collection(
-                firestore,
-                'experiments',
-                experimentId,
-                'cohorts',
-                cohort.id,
-                'publicStageData',
-                data.id,
-                'chats',
-              ),
-              orderBy('timestamp', 'asc'),
-            ),
-          )
-        ).docs.map((doc) => doc.data() as ChatMessage);
-        cohortDownload.chatMap[data.id] = chatList;
-      }
-    }
 
-    // Add CohortDownload to ExperimentDownload
+    // Assign data map
+    publicStageData.forEach((data) => {
+      cohortDownload.dataMap[data.id] = data;
+    });
+
+    // For chat stages, fetch chats in parallel (limited)
+    const chatStages = publicStageData.filter((d) => d.kind === StageKind.CHAT);
+    const chatsByStage = await mapWithConcurrency(
+      chatStages,
+      6,
+      async (data) => {
+        const chatSnap = await getDocs(
+          query(
+            collection(
+              firestore,
+              'experiments',
+              experimentId,
+              'cohorts',
+              cohort.id,
+              'publicStageData',
+              data.id,
+              'chats',
+            ),
+            orderBy('timestamp', 'asc'),
+          ),
+        );
+        return {
+          stageId: data.id,
+          chats: chatSnap.docs.map((d) => d.data() as ChatMessage),
+        };
+      },
+    );
+    chatsByStage.forEach(({stageId, chats}) => {
+      cohortDownload.chatMap[stageId] = chats;
+    });
+
     experimentDownload.cohortMap[cohort.id] = cohortDownload;
-  }
+  });
 
   return experimentDownload;
 }
