@@ -24,13 +24,37 @@ import {
   ParticipantProfileExtended,
 } from '@deliberation-lab/utils';
 
+// Concurrency-limited async map helper
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  worker: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+
+  const runner = async () => {
+    while (true) {
+      const i = nextIndex++;
+      if (i >= items.length) break;
+      results[i] = await worker(items[i], i);
+    }
+  };
+
+  const runners = Array.from({length: Math.min(limit, items.length)}, () =>
+    runner(),
+  );
+  await Promise.all(runners);
+  return results;
+}
+
 /**
  * Generate an ExperimentDownload payload server-side to avoid client roundtrips.
  * Input: { experimentId: string }
  * Auth: experimenter only
  */
 export const generateExperimentDownload = onCall(
-  {timeoutSeconds: 600, memory: '2GiB'},
+  {timeoutSeconds: 900, memory: '2GiB'},
   async (request) => {
     await AuthGuard.isExperimenter(request);
     const {data} = request as {data: {experimentId?: string}};
@@ -86,37 +110,35 @@ export const generateExperimentDownload = onCall(
     const profiles = participantsSnap.docs.map(
       (d) => d.data() as ParticipantProfileExtended,
     );
-    await Promise.all(
-      profiles.map(async (profile) => {
-        const participant = createParticipantDownload(profile);
-        const [answersSnap, behaviorSnap] = await Promise.all([
-          db
-            .collection('experiments')
-            .doc(experimentId)
-            .collection('participants')
-            .doc(profile.privateId)
-            .collection('stageData')
-            .get(),
-          db
-            .collection('experiments')
-            .doc(experimentId)
-            .collection('participants')
-            .doc(profile.privateId)
-            .collection('behavior')
-            .orderBy('timestamp', 'asc')
-            .get(),
-        ]);
+    await mapWithConcurrency(profiles, 20, async (profile) => {
+      const participant = createParticipantDownload(profile);
+      const [answersSnap, behaviorSnap] = await Promise.all([
+        db
+          .collection('experiments')
+          .doc(experimentId)
+          .collection('participants')
+          .doc(profile.privateId)
+          .collection('stageData')
+          .get(),
+        db
+          .collection('experiments')
+          .doc(experimentId)
+          .collection('participants')
+          .doc(profile.privateId)
+          .collection('behavior')
+          .orderBy('timestamp', 'asc')
+          .get(),
+      ]);
 
-        answersSnap.docs
-          .map((d) => d.data() as StageParticipantAnswer)
-          .forEach((ans) => (participant.answerMap[ans.id] = ans));
-        participant.behavior = behaviorSnap.docs.map(
-          (d) => d.data() as BehaviorEvent,
-        );
+      answersSnap.docs
+        .map((d) => d.data() as StageParticipantAnswer)
+        .forEach((ans) => (participant.answerMap[ans.id] = ans));
+      participant.behavior = behaviorSnap.docs.map(
+        (d) => d.data() as BehaviorEvent,
+      );
 
-        out.participantMap[profile.publicId] = participant;
-      }),
-    );
+      out.participantMap[profile.publicId] = participant;
+    });
 
     // Agents with prompts
     const personas = agentsSnap.docs.map((d) => d.data() as AgentPersonaConfig);
@@ -157,53 +179,51 @@ export const generateExperimentDownload = onCall(
 
     // Cohorts: public stage data and chats
     const cohorts = cohortsSnap.docs.map((d) => d.data() as CohortConfig);
-    await Promise.all(
-      cohorts.map(async (cohort) => {
-        const cohortDownload = createCohortDownload(cohort);
-        const publicStageSnap = await db
-          .collection('experiments')
-          .doc(experimentId)
-          .collection('cohorts')
-          .doc(cohort.id)
-          .collection('publicStageData')
-          .get();
+    await mapWithConcurrency(cohorts, 20, async (cohort) => {
+      const cohortDownload = createCohortDownload(cohort);
+      const publicStageSnap = await db
+        .collection('experiments')
+        .doc(experimentId)
+        .collection('cohorts')
+        .doc(cohort.id)
+        .collection('publicStageData')
+        .get();
 
-        const publicStageData = publicStageSnap.docs.map(
-          (d) => d.data() as StagePublicData,
-        );
-        publicStageData.forEach(
-          (data) => (cohortDownload.dataMap[data.id] = data),
-        );
+      const publicStageData = publicStageSnap.docs.map(
+        (d) => d.data() as StagePublicData,
+      );
+      publicStageData.forEach(
+        (data) => (cohortDownload.dataMap[data.id] = data),
+      );
 
-        const chatStageIds = publicStageData
-          .filter((d) => d.kind === StageKind.CHAT)
-          .map((d) => d.id);
-        if (chatStageIds.length > 0) {
-          const chatSnaps = await Promise.all(
-            chatStageIds.map((stageId) =>
-              db
-                .collection('experiments')
-                .doc(experimentId)
-                .collection('cohorts')
-                .doc(cohort.id)
-                .collection('publicStageData')
-                .doc(stageId)
-                .collection('chats')
-                .orderBy('timestamp', 'asc')
-                .get(),
-            ),
+      const chatStageIds = publicStageData
+        .filter((d) => d.kind === StageKind.CHAT)
+        .map((d) => d.id);
+      if (chatStageIds.length > 0) {
+        const chatSnaps = await Promise.all(
+          chatStageIds.map((stageId) =>
+            db
+              .collection('experiments')
+              .doc(experimentId)
+              .collection('cohorts')
+              .doc(cohort.id)
+              .collection('publicStageData')
+              .doc(stageId)
+              .collection('chats')
+              .orderBy('timestamp', 'asc')
+              .get(),
+          ),
+        );
+        chatSnaps.forEach((snap, idx) => {
+          const stageId = chatStageIds[idx];
+          cohortDownload.chatMap[stageId] = snap.docs.map(
+            (d) => d.data() as ChatMessage,
           );
-          chatSnaps.forEach((snap, idx) => {
-            const stageId = chatStageIds[idx];
-            cohortDownload.chatMap[stageId] = snap.docs.map(
-              (d) => d.data() as ChatMessage,
-            );
-          });
-        }
+        });
+      }
 
-        out.cohortMap[cohort.id] = cohortDownload;
-      }),
-    );
+      out.cohortMap[cohort.id] = cohortDownload;
+    });
 
     // Serialize and upload JSON to Cloud Storage, then return a signed URL
     const json = JSON.stringify(out);
