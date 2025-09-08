@@ -1,6 +1,7 @@
 import {onCall} from 'firebase-functions/v2/https';
 import * as functions from 'firebase-functions';
 import {app} from './app';
+import * as admin from 'firebase-admin';
 import {AuthGuard} from './utils/auth-guard';
 import {v4 as uuidv4} from 'uuid';
 
@@ -68,167 +69,21 @@ export const generateExperimentDownload = onCall(
 
     const db = app.firestore();
 
-    // Fetch core collections in parallel
-    const [expSnap, stagesSnap, participantsSnap, agentsSnap, cohortsSnap] =
-      await Promise.all([
-        db.collection('experiments').doc(experimentId).get(),
-        db
-          .collection('experiments')
-          .doc(experimentId)
-          .collection('stages')
-          .get(),
-        db
-          .collection('experiments')
-          .doc(experimentId)
-          .collection('participants')
-          .get(),
-        db
-          .collection('experiments')
-          .doc(experimentId)
-          .collection('agents')
-          .get(),
-        db
-          .collection('experiments')
-          .doc(experimentId)
-          .collection('cohorts')
-          .get(),
-      ]);
+    // Fetch core collections in parallel (page large ones later)
+    const [expSnap, stagesSnap, agentsSnap] = await Promise.all([
+      db.collection('experiments').doc(experimentId).get(),
+      db.collection('experiments').doc(experimentId).collection('stages').get(),
+      db.collection('experiments').doc(experimentId).collection('agents').get(),
+    ]);
 
     if (!expSnap.exists) {
       throw new functions.https.HttpsError('not-found', 'Experiment not found');
     }
 
     const experiment = expSnap.data() as Experiment;
-    const out: ExperimentDownload = createExperimentDownload(experiment);
+    const baseOut: ExperimentDownload = createExperimentDownload(experiment);
 
-    // Stages
-    stagesSnap.docs
-      .map((d) => d.data() as StageConfig)
-      .forEach((stage) => (out.stageMap[stage.id] = stage));
-
-    // Participants with answers and behavior
-    const profiles = participantsSnap.docs.map(
-      (d) => d.data() as ParticipantProfileExtended,
-    );
-    await mapWithConcurrency(profiles, 20, async (profile) => {
-      const participant = createParticipantDownload(profile);
-      const [answersSnap, behaviorSnap] = await Promise.all([
-        db
-          .collection('experiments')
-          .doc(experimentId)
-          .collection('participants')
-          .doc(profile.privateId)
-          .collection('stageData')
-          .get(),
-        db
-          .collection('experiments')
-          .doc(experimentId)
-          .collection('participants')
-          .doc(profile.privateId)
-          .collection('behavior')
-          .orderBy('timestamp', 'asc')
-          .get(),
-      ]);
-
-      answersSnap.docs
-        .map((d) => d.data() as StageParticipantAnswer)
-        .forEach((ans) => (participant.answerMap[ans.id] = ans));
-      participant.behavior = behaviorSnap.docs.map(
-        (d) => d.data() as BehaviorEvent,
-      );
-
-      out.participantMap[profile.publicId] = participant;
-    });
-
-    // Agents with prompts
-    const personas = agentsSnap.docs.map((d) => d.data() as AgentPersonaConfig);
-    await Promise.all(
-      personas.map(async (persona) => {
-        const [participantPromptsSnap, chatPromptsSnap] = await Promise.all([
-          db
-            .collection('experiments')
-            .doc(experimentId)
-            .collection('agents')
-            .doc(persona.id)
-            .collection('participantPrompts')
-            .get(),
-          db
-            .collection('experiments')
-            .doc(experimentId)
-            .collection('agents')
-            .doc(persona.id)
-            .collection('chatPrompts')
-            .get(),
-        ]);
-
-        const agentObject: AgentDataObject = {
-          persona,
-          participantPromptMap: {},
-          chatPromptMap: {},
-        };
-        participantPromptsSnap.docs
-          .map((d) => d.data() as AgentParticipantPromptConfig)
-          .forEach((p) => (agentObject.participantPromptMap[p.id] = p));
-        chatPromptsSnap.docs
-          .map((d) => d.data() as AgentChatPromptConfig)
-          .forEach((p) => (agentObject.chatPromptMap[p.id] = p));
-
-        out.agentMap[persona.id] = agentObject;
-      }),
-    );
-
-    // Cohorts: public stage data and chats
-    const cohorts = cohortsSnap.docs.map((d) => d.data() as CohortConfig);
-    await mapWithConcurrency(cohorts, 20, async (cohort) => {
-      const cohortDownload = createCohortDownload(cohort);
-      const publicStageSnap = await db
-        .collection('experiments')
-        .doc(experimentId)
-        .collection('cohorts')
-        .doc(cohort.id)
-        .collection('publicStageData')
-        .get();
-
-      const publicStageData = publicStageSnap.docs.map(
-        (d) => d.data() as StagePublicData,
-      );
-      publicStageData.forEach(
-        (data) => (cohortDownload.dataMap[data.id] = data),
-      );
-
-      const chatStageIds = publicStageData
-        .filter((d) => d.kind === StageKind.CHAT)
-        .map((d) => d.id);
-      if (chatStageIds.length > 0) {
-        const chatSnaps = await Promise.all(
-          chatStageIds.map((stageId) =>
-            db
-              .collection('experiments')
-              .doc(experimentId)
-              .collection('cohorts')
-              .doc(cohort.id)
-              .collection('publicStageData')
-              .doc(stageId)
-              .collection('chats')
-              .orderBy('timestamp', 'asc')
-              .get(),
-          ),
-        );
-        chatSnaps.forEach((snap, idx) => {
-          const stageId = chatStageIds[idx];
-          cohortDownload.chatMap[stageId] = snap.docs.map(
-            (d) => d.data() as ChatMessage,
-          );
-        });
-      }
-
-      out.cohortMap[cohort.id] = cohortDownload;
-    });
-
-    // Serialize and upload JSON to Cloud Storage, then return a signed URL
-    const json = JSON.stringify(out);
-    const size = Buffer.byteLength(json, 'utf8');
-
+    // Prepare Cloud Storage streaming write
     const projectId =
       process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT;
     if (!projectId) {
@@ -245,16 +100,238 @@ export const generateExperimentDownload = onCall(
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const friendlyName = `experiment-${experimentId}-${timestamp}.json`;
     const path = `downloads/experiments/${experimentId}/${timestamp}-${uuidv4()}.json`;
-
     const file = bucket.file(path);
-    await file.save(Buffer.from(json, 'utf8'), {
-      contentType: 'application/json; charset=utf-8',
+    const writeStream = file.createWriteStream({
       resumable: false,
       metadata: {
+        contentType: 'application/json; charset=utf-8',
         cacheControl: 'no-cache',
         contentDisposition: `attachment; filename="${friendlyName}"`,
       },
     });
+
+    let bytesWritten = 0;
+    const write = (chunk: string) => {
+      const buf = Buffer.from(chunk, 'utf8');
+      bytesWritten += buf.length;
+      writeStream.write(buf);
+    };
+
+    // Helper to page through a collection by document ID
+    const pageThrough = async (
+      col: FirebaseFirestore.CollectionReference,
+      pageSize: number,
+      handler: (
+        docs: FirebaseFirestore.QueryDocumentSnapshot[],
+      ) => Promise<void>,
+    ) => {
+      let lastId: string | undefined;
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        let q = col
+          .orderBy(admin.firestore.FieldPath.documentId())
+          .limit(pageSize);
+        if (lastId) q = q.startAfter(lastId);
+        const snap = await q.get();
+        if (snap.empty) break;
+        await handler(snap.docs);
+        lastId = snap.docs[snap.docs.length - 1].id;
+        if (snap.size < pageSize) break;
+      }
+    };
+
+    // Start JSON document
+    write('{');
+    // experiment field
+    write('"experiment":');
+    write(JSON.stringify(baseOut.experiment));
+
+    // stageMap field
+    write(',"stageMap":{');
+    let stageFirst = true;
+    for (const d of stagesSnap.docs) {
+      const stage = d.data() as StageConfig;
+      write(stageFirst ? '' : ',');
+      stageFirst = false;
+      write(JSON.stringify(stage.id));
+      write(':');
+      write(JSON.stringify(stage));
+    }
+    write('}');
+
+    // agentMap field (concurrency-limited)
+    write(',"agentMap":{');
+    let agentFirst = true;
+    let agentWriteChain = Promise.resolve();
+    const personas = agentsSnap.docs.map((d) => d.data() as AgentPersonaConfig);
+    await mapWithConcurrency(personas, 20, async (persona) => {
+      const [participantPromptsSnap, chatPromptsSnap] = await Promise.all([
+        db
+          .collection('experiments')
+          .doc(experimentId)
+          .collection('agents')
+          .doc(persona.id)
+          .collection('participantPrompts')
+          .get(),
+        db
+          .collection('experiments')
+          .doc(experimentId)
+          .collection('agents')
+          .doc(persona.id)
+          .collection('chatPrompts')
+          .get(),
+      ]);
+
+      const agentObject: AgentDataObject = {
+        persona,
+        participantPromptMap: {},
+        chatPromptMap: {},
+      };
+      participantPromptsSnap.docs
+        .map((d) => d.data() as AgentParticipantPromptConfig)
+        .forEach((p) => (agentObject.participantPromptMap[p.id] = p));
+      chatPromptsSnap.docs
+        .map((d) => d.data() as AgentChatPromptConfig)
+        .forEach((p) => (agentObject.chatPromptMap[p.id] = p));
+
+      const entry = `${agentFirst ? '' : ','}${JSON.stringify(
+        persona.id,
+      )}:${JSON.stringify(agentObject)}`;
+      agentFirst = false;
+      agentWriteChain = agentWriteChain.then(() => {
+        write(entry);
+      });
+      await agentWriteChain;
+    });
+    await agentWriteChain;
+    write('}');
+
+    // cohortMap field (paged + concurrency-limited)
+    write(',"cohortMap":{');
+    let cohortFirst = true;
+    let cohortWriteChain = Promise.resolve();
+    const cohortsCol = db
+      .collection('experiments')
+      .doc(experimentId)
+      .collection('cohorts');
+    await pageThrough(cohortsCol, 200, async (docs) => {
+      const cohorts = docs.map((d) => d.data() as CohortConfig);
+      await mapWithConcurrency(cohorts, 20, async (cohort) => {
+        const cohortDownload = createCohortDownload(cohort);
+        const publicStageSnap = await db
+          .collection('experiments')
+          .doc(experimentId)
+          .collection('cohorts')
+          .doc(cohort.id)
+          .collection('publicStageData')
+          .get();
+
+        const publicStageData = publicStageSnap.docs.map(
+          (d) => d.data() as StagePublicData,
+        );
+        publicStageData.forEach(
+          (data) => (cohortDownload.dataMap[data.id] = data),
+        );
+
+        const chatStageIds = publicStageData
+          .filter((d) => d.kind === StageKind.CHAT)
+          .map((d) => d.id);
+        if (chatStageIds.length > 0) {
+          const chatSnaps = await Promise.all(
+            chatStageIds.map((stageId) =>
+              db
+                .collection('experiments')
+                .doc(experimentId)
+                .collection('cohorts')
+                .doc(cohort.id)
+                .collection('publicStageData')
+                .doc(stageId)
+                .collection('chats')
+                .orderBy('timestamp', 'asc')
+                .get(),
+            ),
+          );
+          chatSnaps.forEach((snap, idx) => {
+            const stageId = chatStageIds[idx];
+            cohortDownload.chatMap[stageId] = snap.docs.map(
+              (d) => d.data() as ChatMessage,
+            );
+          });
+        }
+
+        const entry = `${cohortFirst ? '' : ','}${JSON.stringify(
+          cohort.id,
+        )}:${JSON.stringify(cohortDownload)}`;
+        cohortFirst = false;
+        cohortWriteChain = cohortWriteChain.then(() => {
+          write(entry);
+        });
+        await cohortWriteChain;
+      });
+    });
+    await cohortWriteChain;
+    write('}');
+
+    // participantMap field (paged + concurrency-limited)
+    write(',"participantMap":{');
+    let participantFirst = true;
+    let participantWriteChain = Promise.resolve();
+    const participantsCol = db
+      .collection('experiments')
+      .doc(experimentId)
+      .collection('participants');
+    await pageThrough(participantsCol, 200, async (docs) => {
+      const profiles = docs.map((d) => d.data() as ParticipantProfileExtended);
+      await mapWithConcurrency(profiles, 20, async (profile) => {
+        const participant = createParticipantDownload(profile);
+        const [answersSnap, behaviorSnap] = await Promise.all([
+          db
+            .collection('experiments')
+            .doc(experimentId)
+            .collection('participants')
+            .doc(profile.privateId)
+            .collection('stageData')
+            .get(),
+          db
+            .collection('experiments')
+            .doc(experimentId)
+            .collection('participants')
+            .doc(profile.privateId)
+            .collection('behavior')
+            .orderBy('timestamp', 'asc')
+            .get(),
+        ]);
+
+        answersSnap.docs
+          .map((d) => d.data() as StageParticipantAnswer)
+          .forEach((ans) => (participant.answerMap[ans.id] = ans));
+        participant.behavior = behaviorSnap.docs.map(
+          (d) => d.data() as BehaviorEvent,
+        );
+
+        const entry = `${participantFirst ? '' : ','}${JSON.stringify(
+          profile.publicId,
+        )}:${JSON.stringify(participant)}`;
+        participantFirst = false;
+        participantWriteChain = participantWriteChain.then(() => {
+          write(entry);
+        });
+        await participantWriteChain;
+      });
+    });
+    await participantWriteChain;
+    write('}');
+
+    // End JSON document and finalize stream
+    write('}');
+    const finished = new Promise<void>((resolve, reject) => {
+      writeStream.on('finish', () => resolve());
+      writeStream.on('error', (e) => reject(e));
+    });
+    writeStream.end();
+    await finished;
+
+    const size = bytesWritten;
 
     // 15 minutes expiry
     const expiresAt = Date.now() + 15 * 60 * 1000;
