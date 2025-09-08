@@ -29,7 +29,7 @@ import {
  * Auth: experimenter only
  */
 export const generateExperimentDownload = onCall(
-  {timeoutSeconds: 600},
+  {timeoutSeconds: 600, memory: '2GiB'},
   async (request) => {
     await AuthGuard.isExperimenter(request);
     const {data} = request as {data: {experimentId?: string}};
