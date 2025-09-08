@@ -54,7 +54,7 @@ async function mapWithConcurrency<T, R>(
  * Auth: experimenter only
  */
 export const generateExperimentDownload = onCall(
-  {timeoutSeconds: 900, memory: '2GiB'},
+  {timeoutSeconds: 900, memory: '8GiB'},
   async (request) => {
     await AuthGuard.isExperimenter(request);
     const {data} = request as {data: {experimentId?: string}};
