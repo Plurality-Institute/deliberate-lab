@@ -868,8 +868,25 @@ export class ExperimentManager extends Service {
       {experimentId},
     );
 
-    // Trigger browser download by navigating to the signed URL
-    window.location.assign(url);
+    // Trigger download without navigating away using a hidden iframe.
+    // This avoids popup blockers and works cross-origin with Content-Disposition.
+    try {
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = url;
+      document.body.appendChild(iframe);
+      // Clean up after a minute (download should have started by then)
+      setTimeout(() => {
+        try {
+          document.body.removeChild(iframe);
+        } catch {
+          console.log('download iframe already removed');
+        }
+      }, 60_000);
+    } catch {
+      // Fallback: navigate current tab to the signed URL
+      window.location.assign(url);
+    }
     return {};
   }
 
