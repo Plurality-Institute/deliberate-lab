@@ -3,6 +3,8 @@ import * as functions from 'firebase-functions';
 import {app} from './app';
 import * as admin from 'firebase-admin';
 import {AuthGuard} from './utils/auth-guard';
+import archiver from 'archiver';
+import {PassThrough} from 'stream';
 import {v4 as uuidv4} from 'uuid';
 
 import {
@@ -98,23 +100,43 @@ export const generateExperimentDownload = onCall(
     const bucket = app.storage().bucket(bucketName);
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const friendlyName = `experiment-${experimentId}-${timestamp}.json`;
-    const path = `downloads/experiments/${experimentId}/${timestamp}-${uuidv4()}.json`;
+    const friendlyJsonName = `experiment-${experimentId}-${timestamp}.json`;
+    const zipFileName = `experiment-${experimentId}-${timestamp}.zip`;
+    const path = `downloads/experiments/${experimentId}/${timestamp}-${uuidv4()}.zip`;
     const file = bucket.file(path);
     const writeStream = file.createWriteStream({
       resumable: false,
       metadata: {
-        contentType: 'application/json; charset=utf-8',
+        contentType: 'application/zip',
         cacheControl: 'no-cache',
-        contentDisposition: `attachment; filename="${friendlyName}"`,
+        contentDisposition: `attachment; filename="${zipFileName}"`,
       },
     });
 
+    // Setup archiver to build a zip and count bytes written
+    const archive = archiver('zip', {zlib: {level: 9}});
+    const zipOutput = new PassThrough();
     let bytesWritten = 0;
+    zipOutput.on('data', (chunk) => {
+      bytesWritten += Buffer.isBuffer(chunk)
+        ? chunk.length
+        : Buffer.byteLength(String(chunk));
+    });
+    zipOutput.on('error', (e) => writeStream.destroy(e));
+    archive.on('warning', (e: Error) =>
+      functions.logger.warn('archiver warning', e),
+    );
+    archive.on('error', (e: Error) => writeStream.destroy(e));
+    zipOutput.pipe(writeStream);
+    archive.pipe(zipOutput);
+
+    // Create a streaming entry for the JSON inside the zip
+    const jsonEntry = new PassThrough();
+    archive.append(jsonEntry, {name: friendlyJsonName});
+
     const write = (chunk: string) => {
       const buf = Buffer.from(chunk, 'utf8');
-      bytesWritten += buf.length;
-      writeStream.write(buf);
+      jsonEntry.write(buf);
     };
 
     // Helper to page through a collection by document ID
@@ -322,13 +344,15 @@ export const generateExperimentDownload = onCall(
     await participantWriteChain;
     write('}');
 
-    // End JSON document and finalize stream
+    // End JSON document and finalize archive stream
     write('}');
     const finished = new Promise<void>((resolve, reject) => {
       writeStream.on('finish', () => resolve());
       writeStream.on('error', (e) => reject(e));
     });
-    writeStream.end();
+    jsonEntry.end();
+    // Finalize zip (no more entries)
+    archive.finalize();
     await finished;
 
     const size = bytesWritten;
@@ -352,7 +376,7 @@ export const generateExperimentDownload = onCall(
         version: 'v4',
         expires: new Date(expiresAt),
       });
-      return {url, expiresAt, path, size, contentType: 'application/json'};
+      return {url, expiresAt, path, size, contentType: 'application/zip'};
     } catch (err: unknown) {
       functions.logger.error('Failed to generate signed URL', err);
       const hint =
