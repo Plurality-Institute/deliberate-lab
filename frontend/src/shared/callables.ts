@@ -557,7 +557,13 @@ export const generateExperimentDownloadCallable = async (
 ) => {
   const {data} = await httpsCallable<
     {experimentId: string},
-    import('@deliberation-lab/utils').ExperimentDownload
+    {
+      url: string;
+      expiresAt: number;
+      path: string;
+      size: number;
+      contentType: string;
+    }
   >(
     functions,
     'generateExperimentDownload',

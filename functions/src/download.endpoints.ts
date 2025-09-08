@@ -2,6 +2,7 @@ import {onCall} from 'firebase-functions/v2/https';
 import * as functions from 'firebase-functions';
 import {app} from './app';
 import {AuthGuard} from './utils/auth-guard';
+import {v4 as uuidv4} from 'uuid';
 
 import {
   AgentChatPromptConfig,
@@ -204,6 +205,65 @@ export const generateExperimentDownload = onCall(
       }),
     );
 
-    return out;
+    // Serialize and upload JSON to Cloud Storage, then return a signed URL
+    const json = JSON.stringify(out);
+    const size = Buffer.byteLength(json, 'utf8');
+
+    const projectId =
+      process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT;
+    if (!projectId) {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        'Missing project id in environment',
+      );
+    }
+
+    const bucketName =
+      process.env.FIREBASE_STORAGE_BUCKET || `${projectId}.appspot.com`;
+    const bucket = app.storage().bucket(bucketName);
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const friendlyName = `experiment-${experimentId}-${timestamp}.json`;
+    const path = `downloads/experiments/${experimentId}/${timestamp}-${uuidv4()}.json`;
+
+    const file = bucket.file(path);
+    await file.save(Buffer.from(json, 'utf8'), {
+      contentType: 'application/json; charset=utf-8',
+      resumable: false,
+      metadata: {
+        cacheControl: 'no-cache',
+        contentDisposition: `attachment; filename="${friendlyName}"`,
+      },
+    });
+
+    // 15 minutes expiry
+    const expiresAt = Date.now() + 15 * 60 * 1000;
+    // Generate signed URL (unsupported on Storage emulator)
+    if (process.env.FIREBASE_STORAGE_EMULATOR_HOST) {
+      functions.logger.warn(
+        'Storage emulator detected; signed URLs are not supported.',
+      );
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        'Signed URLs are not supported when using the Storage emulator.',
+      );
+    }
+
+    try {
+      const [url] = await file.getSignedUrl({
+        action: 'read',
+        version: 'v4',
+        expires: new Date(expiresAt),
+      });
+      return {url, expiresAt, path, size, contentType: 'application/json'};
+    } catch (err: unknown) {
+      functions.logger.error('Failed to generate signed URL', err);
+      const hint =
+        'Ensure the Cloud Functions runtime service account has the "Service Account Token Creator" role and that local runs use a service account key (GOOGLE_APPLICATION_CREDENTIALS).';
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        `Unable to generate signed URL. ${hint}`,
+      );
+    }
   },
 );

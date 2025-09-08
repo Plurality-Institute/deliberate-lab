@@ -51,3 +51,4 @@ export * from './api/openai.api';
 
 // Download/export endpoints
 export * from './download.endpoints';
+export * from './storage.cleanup';
