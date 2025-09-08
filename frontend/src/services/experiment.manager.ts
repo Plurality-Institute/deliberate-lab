@@ -16,7 +16,6 @@ import {FirebaseService} from './firebase.service';
 import {ParticipantService} from './participant.service';
 import {Pages, RouterService} from './router.service';
 import {Service} from './service';
-import JSZip from 'jszip';
 
 import {
   AlertMessage,
@@ -54,19 +53,12 @@ import {
   testAgentParticipantPromptCallable,
   updateCohortMetadataCallable,
   writeExperimentCallable,
+  generateExperimentDownloadCallable,
 } from '../shared/callables';
 import {
   getCohortParticipants,
   hasMaxParticipantsInCohort,
 } from '../shared/cohort.utils';
-import {
-  getChatHistoryData,
-  getChipNegotiationCSV,
-  getChipNegotiationData,
-  getChipNegotiationPlayerMapCSV,
-  getExperimentDownload,
-  getParticipantData,
-} from '../shared/file.utils';
 import {
   isObsoleteParticipant,
   requiresAnonymousProfiles,
@@ -866,93 +858,36 @@ export class ExperimentManager extends Service {
     }
   }
 
-  /** Download experiment as a zip file. */
+  /** Download experiment data via signed URL from Cloud Storage. */
   async downloadExperiment() {
-    let data = {};
     const experimentId = this.sp.routerService.activeRoute.params['experiment'];
-    if (experimentId) {
-      const result = await getExperimentDownload(
-        this.sp.firebaseService.firestore,
-        experimentId,
-      );
+    if (!experimentId) return {};
 
-      if (result) {
-        const zip = new JSZip();
-        const experimentName = result.experiment.metadata.name;
+    const {url} = await generateExperimentDownloadCallable(
+      this.sp.firebaseService.functions,
+      {experimentId},
+    );
 
-        // Add experiment JSON to zip
-        zip.file(`${experimentName}.json`, JSON.stringify(result, null, 2));
-
-        // Add chip negotiation data
-        const chipData = getChipNegotiationData(result);
-        if (chipData.length > 0) {
-          const chipDataTitle = `${experimentName}_ChipNegotiation_all`;
-          zip.file(
-            `${chipDataTitle}.json`,
-            JSON.stringify({games: chipData}, null, 2),
-          );
-          zip.file(
-            `${chipDataTitle}.csv`,
-            new Blob(
-              [
-                getChipNegotiationCSV(result, chipData)
-                  .map((row) => row.join(','))
-                  .join('\n'),
-              ],
-              {type: 'text/csv'},
-            ),
-          );
-          zip.file(
-            `${experimentName}_ChipNegotiation_PlayerMap.csv`,
-            new Blob(
-              [
-                getChipNegotiationPlayerMapCSV(result, chipData)
-                  .map((row) => row.join(','))
-                  .join('\n'),
-              ],
-              {type: 'text/csv'},
-            ),
-          );
+    // Trigger download without navigating away using a hidden iframe.
+    // This avoids popup blockers and works cross-origin with Content-Disposition.
+    try {
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = url;
+      document.body.appendChild(iframe);
+      // Clean up after a minute (download should have started by then)
+      setTimeout(() => {
+        try {
+          document.body.removeChild(iframe);
+        } catch {
+          console.log('download iframe already removed');
         }
-
-        // Add chat data to zip
-        const chatData = getChatHistoryData(result);
-        chatData.forEach((data) => {
-          const chatFileName = `${data.experimentName}_ChatHistory_Cohort-${data.cohortId}_Stage-${data.stageId}.csv`;
-          zip.file(
-            chatFileName,
-            new Blob([data.data.map((row) => row.join(',')).join('\n')], {
-              type: 'text/csv',
-            }),
-          );
-        });
-
-        // Add participant data to zip
-        zip.file(
-          `${experimentName}_ParticipantData.csv`,
-          new Blob(
-            [
-              getParticipantData(result)
-                .map((row) => row.join(','))
-                .join('\n'),
-            ],
-            {type: 'text/csv'},
-          ),
-        );
-
-        // Generate zip and trigger download
-        zip.generateAsync({type: 'blob'}).then((blob) => {
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
-          link.download = `${experimentName}_data.zip`;
-          link.click();
-          URL.revokeObjectURL(link.href);
-        });
-
-        data = result;
-      }
+      }, 60_000);
+    } catch {
+      // Fallback: navigate current tab to the signed URL
+      window.location.assign(url);
     }
-    return data;
+    return {};
   }
 
   /** TEMPORARY: Test agent participant prompt for given participant/stage. */
