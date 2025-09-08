@@ -26,7 +26,7 @@ export const purgeOldExperimentDownloads = onSchedule(
     }
 
     const bucketName =
-      process.env.FIREBASE_STORAGE_BUCKET || `${projectId}.appspot.com`;
+      process.env.FIREBASE_STORAGE_BUCKET || `${projectId}.firebasestorage.app`;
     const bucket = app.storage().bucket(bucketName);
     const prefix = 'downloads/experiments/';
     const cutoffMs = Date.now() - 24 * 60 * 60 * 1000; // 1 day

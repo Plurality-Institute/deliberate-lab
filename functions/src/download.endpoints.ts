@@ -219,7 +219,7 @@ export const generateExperimentDownload = onCall(
     }
 
     const bucketName =
-      process.env.FIREBASE_STORAGE_BUCKET || `${projectId}.appspot.com`;
+      process.env.FIREBASE_STORAGE_BUCKET || `${projectId}.firebasestorage.app`;
     const bucket = app.storage().bucket(bucketName);
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
