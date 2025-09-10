@@ -205,7 +205,7 @@ export class CohortSummary extends MobxLitElement {
     );
 
     // Hide disconnected participants who have been in their stage > 4 hours
-    const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
+    const FORTY_FIVE_MINS = 45 * 60 * 1000;
     const now = Date.now();
     const visibleParticipants = !this.experimentManager
       .hideStaleDisconnectedParticipants
@@ -218,7 +218,7 @@ export class CohortSummary extends MobxLitElement {
           );
           if (!start) return true;
           const startMs = start.seconds * 1000;
-          return now - startMs <= FOUR_HOURS_MS;
+          return now - startMs <= FORTY_FIVE_MINS;
         });
 
     if (participants.length === 0) {

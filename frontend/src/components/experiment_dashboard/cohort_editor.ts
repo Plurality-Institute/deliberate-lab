@@ -168,7 +168,7 @@ export class Component extends MobxLitElement {
     emptyMessage = 'No participants yet',
   ) {
     // Optionally hide disconnected participants who have been idle > 4 hours
-    const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
+    const FORTY_FIVE_MINS = 45 * 60 * 1000;
     const now = Date.now();
     const visibleParticipants = !this.experimentManager
       .hideStaleDisconnectedParticipants
@@ -181,8 +181,7 @@ export class Component extends MobxLitElement {
           );
           if (!start) return true;
           const startMs = start.seconds * 1000;
-          return now - startMs <= FOUR_HOURS_MS;
-        });
+          return now - startMs <= FORTY_FIVE_MINS;5 });
 
     const renderEmptyMessage = () => {
       if (visibleParticipants.length === 0) {
