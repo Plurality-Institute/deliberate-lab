@@ -57,6 +57,7 @@ export class Panel extends MobxLitElement {
   @state() panelView: PanelView = PanelView.DEFAULT;
   @state() isLoading = false;
   @state() isDownloading = false;
+  @state() isGenerating = false;
   @state() isAckAlertLoading = false;
   @state() participantSearchQuery = '';
 
@@ -505,22 +506,56 @@ export class Panel extends MobxLitElement {
   }
 
   private renderExperimentDownloadButton() {
-    const onClick = async () => {
+    const hasUrl = !!this.experimentManager.experimentDownloadInfo?.url;
+    const expiresAt = this.experimentManager.experimentDownloadInfo?.expiresAt;
+    const isExpired = expiresAt ? Date.now() > expiresAt * 1000 : false; // expiresAt likely seconds
+    const showDownload = hasUrl && !isExpired;
+
+    const onGenerate = async () => {
+      this.isGenerating = true;
+      await this.experimentManager.generateExperimentJson();
+      this.isGenerating = false;
+      this.requestUpdate();
+    };
+
+    const onDownload = async () => {
       this.isDownloading = true;
-      await this.experimentManager.downloadExperiment();
+      await this.experimentManager.downloadGeneratedExperimentJson();
       this.isDownloading = false;
     };
 
+    // If the URL expired, clear it so we show Generate again
+    if (hasUrl && isExpired) {
+      this.experimentManager.experimentDownloadInfo = null;
+    }
+
     return html`
-      <pr-button
-        color="secondary"
-        variant="outlined"
-        ?loading=${this.isDownloading}
-        @click=${onClick}
-      >
-        <pr-icon icon="download" color="secondary" variant="default"> </pr-icon>
-        <div>Download experiment data</div>
-      </pr-button>
+      ${showDownload
+        ? html`
+            <pr-button
+              color="secondary"
+              variant="outlined"
+              ?loading=${this.isDownloading}
+              @click=${onDownload}
+            >
+              <pr-icon icon="download" color="secondary" variant="default">
+              </pr-icon>
+              <div>Download JSON</div>
+            </pr-button>
+          `
+        : html`
+            <pr-button
+              color="secondary"
+              variant="outlined"
+              ?loading=${this.isGenerating ||
+              this.experimentManager.isGeneratingDownload}
+              @click=${onGenerate}
+            >
+              <pr-icon icon="build" color="secondary" variant="default">
+              </pr-icon>
+              <div>Generate JSON</div>
+            </pr-button>
+          `}
     `;
   }
 
