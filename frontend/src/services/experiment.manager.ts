@@ -110,6 +110,16 @@ export class ExperimentManager extends Service {
   @observable isEditing = false; // is on an edit page
   @observable isEditingSettingsDialog = false; // is in settings dialog
 
+  // Experiment download generation state
+  @observable isGeneratingDownload = false;
+  @observable experimentDownloadInfo: {
+    url: string;
+    expiresAt: number;
+    path: string;
+    size: number;
+    contentType: string;
+  } | null = null;
+
   // Current participant, view in dashboard
   @observable currentParticipantId: string | undefined = undefined;
   @observable currentCohortId: string | undefined = undefined;
@@ -221,6 +231,10 @@ export class ExperimentManager extends Service {
     this.hideStaleDisconnectedParticipants = true;
     this.cohortEditing = undefined;
     this.unsubscribeAll();
+
+    // Reset generated download state
+    this.isGeneratingDownload = false;
+    this.experimentDownloadInfo = null;
   }
 
   getParticipantSearchResults(rawQuery: string) {
@@ -858,32 +872,53 @@ export class ExperimentManager extends Service {
     }
   }
 
-  /** Download experiment data via signed URL from Cloud Storage. */
-  async downloadExperiment() {
+  /**
+   * Step 1: Generate experiment JSON server-side and return signed URL.
+   * Stores result in experimentDownloadInfo for a later manual download.
+   */
+  async generateExperimentJson() {
     const experimentId = this.sp.routerService.activeRoute.params['experiment'];
     if (!experimentId) return {};
 
-    const {url} = await generateExperimentDownloadCallable(
-      this.sp.firebaseService.functions,
-      {experimentId},
-    );
-
-    // Trigger download without navigating away using a hidden iframe.
-    // This avoids popup blockers and works cross-origin with Content-Disposition.
+    runInAction(() => {
+      this.isGeneratingDownload = true;
+      this.experimentDownloadInfo = null;
+    });
     try {
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = url;
-      document.body.appendChild(iframe);
-      // Clean up after a minute (download should have started by then)
-      setTimeout(() => {
-        try {
-          document.body.removeChild(iframe);
-        } catch {
-          console.log('download iframe already removed');
-        }
-      }, 60_000);
-    } catch {
+      const info = await generateExperimentDownloadCallable(
+        this.sp.firebaseService.functions,
+        {experimentId},
+      );
+      runInAction(() => {
+        this.experimentDownloadInfo = info;
+      });
+    } finally {
+      runInAction(() => {
+        this.isGeneratingDownload = false;
+      });
+    }
+    return {};
+  }
+
+  /** Step 2: Trigger browser download of the previously generated JSON. */
+  async downloadGeneratedExperimentJson() {
+    const url = this.experimentDownloadInfo?.url;
+    if (!url) return {};
+
+    // Use an <a download> to ensure it counts as a user gesture-driven download.
+    try {
+      const link = document.createElement('a');
+      link.href = url;
+      // Try to infer a filename; otherwise let the server set Content-Disposition
+      const fallbackName =
+        this.experimentDownloadInfo?.path?.split('/').pop() ||
+        'experiment.json';
+      link.download = fallbackName;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
       // Fallback: navigate current tab to the signed URL
       window.location.assign(url);
     }

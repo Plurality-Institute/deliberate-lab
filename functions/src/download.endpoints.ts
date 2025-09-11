@@ -95,6 +95,8 @@ export const generateExperimentDownload = onCall(
       );
     }
 
+    // Default to firebasestorage.app, since that is where we keep our storage buckets
+    // for this project.
     const bucketName =
       process.env.FIREBASE_STORAGE_BUCKET || `${projectId}.firebasestorage.app`;
     const bucket = app.storage().bucket(bucketName);
@@ -104,12 +106,19 @@ export const generateExperimentDownload = onCall(
     const zipFileName = `experiment-${experimentId}-${timestamp}.zip`;
     const path = `downloads/experiments/${experimentId}/${timestamp}-${uuidv4()}.zip`;
     const file = bucket.file(path);
+    const usingStorageEmulator = !!process.env.FIREBASE_STORAGE_EMULATOR_HOST;
+    // For emulator, provide a firebaseStorageDownloadTokens so we can serve an unsigned URL with token
+    const emulatorDownloadToken = usingStorageEmulator ? uuidv4() : undefined;
     const writeStream = file.createWriteStream({
       resumable: false,
       metadata: {
         contentType: 'application/zip',
         cacheControl: 'no-cache',
         contentDisposition: `attachment; filename="${zipFileName}"`,
+        // Custom metadata for Firebase Storage download URLs
+        ...(emulatorDownloadToken
+          ? {metadata: {firebaseStorageDownloadTokens: emulatorDownloadToken}}
+          : {}),
       },
     });
 
@@ -359,15 +368,19 @@ export const generateExperimentDownload = onCall(
 
     // 15 minutes expiry
     const expiresAt = Date.now() + 15 * 60 * 1000;
-    // Generate signed URL (unsupported on Storage emulator)
+    // When using the Storage emulator, signed URLs are unsupported.
+    // Return a direct emulator URL to the object so local flows can be tested.
     if (process.env.FIREBASE_STORAGE_EMULATOR_HOST) {
+      const host = process.env.FIREBASE_STORAGE_EMULATOR_HOST; // e.g. 127.0.0.1:9199
+      const encodedPath = encodeURIComponent(path);
+      const tokenParam = emulatorDownloadToken
+        ? `&token=${encodeURIComponent(emulatorDownloadToken)}`
+        : '';
+      const url = `http://${host}/v0/b/${bucketName}/o/${encodedPath}?alt=media${tokenParam}`;
       functions.logger.warn(
-        'Storage emulator detected; signed URLs are not supported.',
+        `Storage emulator detected; returning unsigned emulator URL: ${url}`,
       );
-      throw new functions.https.HttpsError(
-        'failed-precondition',
-        'Signed URLs are not supported when using the Storage emulator.',
-      );
+      return {url, expiresAt, path, size, contentType: 'application/zip'};
     }
 
     try {
