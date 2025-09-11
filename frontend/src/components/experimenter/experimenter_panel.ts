@@ -508,7 +508,7 @@ export class Panel extends MobxLitElement {
   private renderExperimentDownloadButton() {
     const hasUrl = !!this.experimentManager.experimentDownloadInfo?.url;
     const expiresAt = this.experimentManager.experimentDownloadInfo?.expiresAt;
-    const isExpired = expiresAt ? Date.now() > expiresAt * 1000 : false; // expiresAt likely seconds
+    const isExpired = expiresAt ? Date.now() > expiresAt : false; // expiresAt in ms
     const showDownload = hasUrl && !isExpired;
 
     const onGenerate = async () => {
