@@ -283,7 +283,7 @@ export class Panel extends MobxLitElement {
             <div>
               ${hideStaleDisconnected
                 ? 'Show stale disconnects'
-                : 'Hide stale disconnects (> 4h)'}
+                : 'Hide stale disconnects (> 45m)'}
             </div>
           </div>
           <div
