@@ -95,8 +95,10 @@ export const generateExperimentDownload = onCall(
       );
     }
 
+    // Default to firebasestorage.app, since that is where we keep our storage buckets
+    // for this project.
     const bucketName =
-      process.env.FIREBASE_STORAGE_BUCKET || `${projectId}.appspot.com`;
+      process.env.FIREBASE_STORAGE_BUCKET || `${projectId}.firebasestorage.app`;
     const bucket = app.storage().bucket(bucketName);
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
