@@ -120,6 +120,8 @@ export class CohortLanding extends MobxLitElement {
       /[?&]PROLIFIC_PID=([^&]+)/,
     );
     const prolificId = prolificIdMatch ? prolificIdMatch[1] : undefined;
+    const studyIdMatch = window.location.href.match(/[?&]STUDY_ID=([^&]+)/);
+    const studyId = studyIdMatch ? studyIdMatch[1] : undefined;
     if (
       this.experimentService.experiment!.prolificConfig!
         .enableProlificIntegration &&
@@ -133,7 +135,7 @@ export class CohortLanding extends MobxLitElement {
     // Use ExperimentManager's createParticipant
     const response = await core
       .getService(ExperimentManager)
-      .createParticipant(params['cohort'], prolificId);
+      .createParticipant(params['cohort'], prolificId, studyId);
 
     if (response.exists && response.participant) {
       // Existing participant found, show dialog
@@ -174,9 +176,12 @@ export class CohortLanding extends MobxLitElement {
       /[?&]PROLIFIC_PID=([^&]+)/,
     );
     const prolificId = prolificIdMatch ? prolificIdMatch[1] : undefined;
+    const studyIdMatch = window.location.href.match(/[?&]STUDY_ID=([^&]+)/);
+    const studyId = studyIdMatch ? studyIdMatch[1] : undefined;
     const response = await core.getService(ExperimentManager).createParticipant(
       params['cohort'],
       prolificId,
+      studyId,
       true, // forceNew
     );
     this.routerService.navigate(Pages.PARTICIPANT, {
