@@ -647,6 +647,7 @@ async function createParticipantInternal(
     currentCohortId: data.cohortId,
     prolificId: data.prolificId,
   });
+  participantConfig.studyId = data.studyId ?? null;
 
   // If agent config is specified, add to participant config
   if (data.agentConfig) {

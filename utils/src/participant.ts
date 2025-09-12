@@ -30,6 +30,7 @@ export interface ParticipantProfileBase {
 export interface ParticipantProfile extends ParticipantProfileBase {
   publicId: string;
   prolificId: string | null;
+  studyId: string | null;
   currentStageId: string;
   currentCohortId: string;
   transferCohortId: string | null; // set if pending transfer, else null
@@ -148,6 +149,7 @@ export function createParticipantProfileExtended(
     privateId: config.privateId ?? generateId(),
     publicId: config.publicId ?? '',
     prolificId: config.prolificId ?? null,
+    studyId: config.studyId ?? null,
     currentStageId: config.currentStageId ?? '',
     currentCohortId: config.currentCohortId ?? '',
     transferCohortId: config.transferCohortId ?? null,

@@ -88,8 +88,8 @@ export class Preview extends MobxLitElement {
   private renderChips() {
     return html`
       <div class="chip-container">
-        ${this.renderStatusChip()} ${this.renderConnectedChip()} ${this.renderStageChip()}
-        ${this.renderTOSChip()}
+        ${this.renderStatusChip()} ${this.renderConnectedChip()}
+        ${this.renderStageChip()} ${this.renderTOSChip()}
       </div>
     `;
   }
@@ -126,6 +126,12 @@ export class Preview extends MobxLitElement {
             <div class="table-cell small">Prolific ID</div>
             <div class="table-cell">
               ${isProlific ? `${this.profile?.prolificId}` : 'N/A'}
+            </div>
+          </div>
+          <div class="table-row">
+            <div class="table-cell small">Study ID</div>
+            <div class="table-cell">
+              ${isProlific ? `${this.profile?.studyId}` : 'N/A'}
             </div>
           </div>
         </div>
@@ -271,7 +277,10 @@ export class Preview extends MobxLitElement {
       switch (stage.kind) {
         case StageKind.PAYOUT:
           stageHtml = html`
-            <payout-summary-view .stage=${stage} .answer=${answer}></payout-summary-view>
+            <payout-summary-view
+              .stage=${stage}
+              .answer=${answer}
+            ></payout-summary-view>
           `;
           break;
         case StageKind.REVEAL:

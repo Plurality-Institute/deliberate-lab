@@ -770,6 +770,7 @@ export class ExperimentManager extends Service {
   async createParticipant(
     cohortId: string,
     prolificId?: string,
+    studyId?: string,
     forceNew?: boolean,
   ): Promise<{
     exists?: boolean;
@@ -795,6 +796,7 @@ export class ExperimentManager extends Service {
           cohortId,
           isAnonymous,
           prolificId: prolificId || undefined,
+          studyId: studyId || undefined,
           forceNew: forceNew || false,
         },
       );
