@@ -22,6 +22,7 @@
     ]
   },
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "balance": "npm --prefix functions run balance --"
   }
 }
