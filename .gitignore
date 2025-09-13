@@ -6,9 +6,9 @@ node_modules/
 
 # Packed shared utils package
 *deliberation-lab-utils-*.tgz
-<<<<<<< HEAD
 
 # firebase caches
 .firebase
-=======
->>>>>>> main
+
+# prolific auth token file
+.prolific_token

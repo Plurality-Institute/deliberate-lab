@@ -9,7 +9,8 @@
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
-    "test": "jest"
+    "test": "jest",
+    "balance": "node scripts/bridging_bot_balancer.js"
   },
   "engines": {
     "node": "18"
