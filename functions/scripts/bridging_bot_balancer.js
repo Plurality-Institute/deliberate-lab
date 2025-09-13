@@ -371,7 +371,7 @@ async function main() {
       await ensureStudyState(prochoiceStudyId, 'PAUSED');
       if (loopMode) {
         if (activeInLobby.length === 0) {
-          console.error('[balance] Lobby cleared and both studies paused. Exiting loop.');
+          console.error('[balance] Lobby cleared and both studies paused. Exiting. Don\'t forget to lock the Lobby cohort!');
           process.exit(0);
         } else {
           console.error(`[balance] Balanced but lobby not empty (active=${activeInLobby.length}). Keeping both paused and continuing.`);
