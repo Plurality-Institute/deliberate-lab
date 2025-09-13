@@ -16,6 +16,7 @@
  *   --small-threshold <n>         "Small" pro-choice queue threshold (default 2)
  *   --token <api-token>           Prolific API token; else PROLIFIC_API_TOKEN env; else .prolific_token file
  *   --loop                         Keep running: poll every 30s, or 60s after a pro-choice unpause
+ *   --shutdown                     Graceful shutdown mode: recruit until balanced, then pause both studies
  */
 
 /*
@@ -56,7 +57,7 @@ const fs = require('fs');
 const path = require('path');
 
 function usageAndExit() {
-  console.error('Usage: npm run balance -- [--project <gcp-project-id>] [--dry-run] [--unpause-window <sec>] [--small-threshold <n>] [--token <api-token>] <experimentId> <prolifeStudyId> <prochoiceStudyId>');
+  console.error('Usage: npm run balance -- [--project <gcp-project-id>] [--dry-run] [--unpause-window <sec>] [--small-threshold <n>] [--shutdown] [--token <api-token>] <experimentId> <prolifeStudyId> <prochoiceStudyId>');
   process.exit(1);
 }
 
@@ -70,6 +71,7 @@ async function main() {
   let smallThreshold = 2;
   let prolificTokenArg = null;
   let loopMode = false;
+  let shutdownMode = false;
   for (let i = 0; i < rawArgs.length; i++) {
     const a = rawArgs[i];
     if (a === '--project' && i + 1 < rawArgs.length) {
@@ -82,6 +84,10 @@ async function main() {
     }
     if (a === '--loop') {
       loopMode = true;
+      continue;
+    }
+    if (a === '--shutdown') {
+      shutdownMode = true;
       continue;
     }
     if (a === '--unpause-window' && i + 1 < rawArgs.length) {
@@ -325,19 +331,17 @@ async function main() {
     return await res.json();
   }
   async function ensureStudyState(id, desired /* 'ACTIVE' | 'PAUSED' */) {
-    if(dryRun) {
+    if (dryRun) {
       console.log(`[balance] (dry-run) would ensure study ${id} is ${desired}`);
-      return { changed: false, status: current };
+      return { changed: false, status: desired };
     }
     const st = await prolificGetStudy(id);
     const current = st.status;
     if (current === desired) return { changed: false, status: current };
     if (desired === 'ACTIVE') {
-      if (dryRun) return { changed: true, status: current, planned: 'START' };
       await prolificTransition(id, 'START');
       return { changed: true, status: 'ACTIVE' };
     } else if (desired === 'PAUSED') {
-      if (dryRun) return { changed: true, status: current, planned: 'PAUSE' };
       await prolificTransition(id, 'PAUSE');
       return { changed: true, status: 'PAUSED' };
     }
@@ -356,6 +360,25 @@ async function main() {
   if (!prolificToken && !dryRun) {
   console.error('[balance] No Prolific token provided (use --token or PROLIFIC_API_TOKEN or .prolific_token). Skipping Prolific controls.');
     return false;
+  }
+
+  // Shutdown mode overrides defaults: drive toward equal waiting queues, then pause both
+  if (shutdownMode) {
+    console.error('[balance] Shutdown mode enabled: aiming for equal waiting queues, then pausing both studies.');
+    if (prolifeCount === prochoiceCount) {
+      console.error('[balance] Balanced participant set detected → pausing both studies.');
+      await ensureStudyState(prolifeStudyId, 'PAUSED');
+      await ensureStudyState(prochoiceStudyId, 'PAUSED');
+      if (loopMode) {
+        if (activeInLobby.length === 0) {
+          console.error('[balance] Lobby cleared and both studies paused. Exiting loop.');
+          process.exit(0);
+        } else {
+          console.error(`[balance] Balanced but lobby not empty (active=${activeInLobby.length}). Keeping both paused and continuing.`);
+        }
+      }
+      return false;
+    }
   }
 
   // Rule 3: If >5 pro-life waiting, pause pro-life (leave pro-choice unchanged)
