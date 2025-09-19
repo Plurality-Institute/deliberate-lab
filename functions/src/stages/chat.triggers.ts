@@ -17,6 +17,7 @@ import {
   ParticipantProfileExtended,
   StageConfig,
   Experiment,
+  awaitTypingDelay,
 } from '@deliberation-lab/utils';
 import {updateCurrentDiscussionIndex} from './chat.utils';
 import {getPastStagesPromptContext} from './stage.utils';
@@ -33,6 +34,7 @@ import {
   getAgentChatAPIResponse,
   getAgentChatPrompt,
   getChatMessages,
+  getChatMessageCount,
   getChatStage,
   getChatStagePublicData,
   hasEndedChat,
@@ -229,63 +231,97 @@ export const createAgentMessage = onDocumentCreated(
     const cohortId = event.params.cohortId;
     const stageId = event.params.stageId;
 
-    await app.firestore().runTransaction(async (transaction) => {
-      // Use experiment config to get ChatStageConfig with agents.
-      const stage = await getChatStage(experimentId, stageId, transaction);
-      if (!stage) {
-        return;
-      }
+    // Fetch stage and public data
+    const stage = await getChatStage(experimentId, stageId);
+    if (!stage) return;
+    const initialPublicStageData = await getChatStagePublicData(
+      experimentId,
+      cohortId,
+      stageId,
+    );
+    if (
+      !initialPublicStageData ||
+      Boolean(initialPublicStageData.discussionEndTimestamp)
+    )
+      return; // Conversation ended
 
-      const publicStageData = await getChatStagePublicData(
+    // Load current chat history once for prompt context
+    const initialChatMessages = await getChatMessages(
+      experimentId,
+      cohortId,
+      stageId,
+    );
+    const initialMessageCount = initialChatMessages.length;
+
+    const mediators = await getMediatorsInCohortStage(
+      experimentId,
+      cohortId,
+      stageId,
+    );
+
+    // Track how many mediator messages we've successfully posted so we allow
+    // multiple mediator responses to the same triggering message (matching
+    // previous transactional semantics) unless the conversation advances.
+    let mediatorMessagesPosted = 0;
+
+    for (const mediator of mediators) {
+      // Skip if mediator lacks agent config
+      if (!mediator.agentConfig) continue;
+
+      // Build prompt config (no transaction)
+      const promptConfig = await getAgentChatPrompt(
+        experimentId,
+        stageId,
+        mediator.agentConfig.agentId,
+      );
+      if (!promptConfig) continue;
+
+      // LLM call outside transaction
+      const response = await getAgentChatAPIResponse(
+        mediator,
         experimentId,
         cohortId,
-        stageId,
-        transaction,
+        mediator.id,
+        '', // no past stage context for mediators currently
+        initialChatMessages,
+        mediator.agentConfig,
+        promptConfig,
+        stage,
       );
-      // Make sure the conversation hasn't ended.
-      if (!publicStageData || Boolean(publicStageData.discussionEndTimestamp))
-        return;
+      if (!response) continue;
 
-      // Use chats in collection to build chat history for prompt, get num chats
-      const chatMessages = await getChatMessages(
-        experimentId,
-        cohortId,
-        stageId,
-        transaction,
-      );
-
-      // Get mediators for current cohort and stage
-      const mediators = await getMediatorsInCohortStage(
-        experimentId,
-        cohortId,
-        stageId,
-        transaction,
+      // Simulated typing delay before opening the transaction
+      await awaitTypingDelay(
+        response.message,
+        response.promptConfig.chatSettings.wordsPerMinute,
       );
 
-      // For each active agent mediator, attempt to create/send chat response
-      for (const mediator of mediators) {
-        const promptConfig = await getAgentChatPrompt(
-          experimentId,
-          stageId,
-          mediator.agentConfig!.agentId,
-          transaction,
-        );
-        if (!promptConfig) continue;
-        const response = await getAgentChatAPIResponse(
-          mediator, // profile
+      // Attempt optimistic commit
+      await app.firestore().runTransaction(async (transaction) => {
+        // Re-check public stage data & message count inside transaction
+        const publicStageData = await getChatStagePublicData(
           experimentId,
           cohortId,
-          mediator.id,
-          '', // no past stage context
-          chatMessages,
-          mediator.agentConfig!,
-          promptConfig,
-          stage,
+          stageId,
           transaction,
         );
-        if (!response) continue;
+        if (!publicStageData || Boolean(publicStageData.discussionEndTimestamp))
+          return; // Conversation ended
 
-        // Build chat message to send
+        const currentCount = await getChatMessageCount(
+          experimentId,
+          cohortId,
+          stageId,
+          transaction,
+        );
+
+        const expectedCount = initialMessageCount + mediatorMessagesPosted;
+        if (currentCount !== expectedCount) {
+          // State changed; abort (skip posting) – another message arrived.
+          return;
+        }
+
+        // Build chat message with up-to-date discussionId
         const explanation =
           response.parsed[
             response.promptConfig.structuredOutputConfig?.explanationField
@@ -299,18 +335,37 @@ export const createAgentMessage = onDocumentCreated(
           agentId: response.agentId,
           explanation,
         });
-        await sendAgentChatMessage(
-          chatMessage,
-          response,
-          chatMessages.length,
-          experimentId,
-          cohortId,
-          stageId,
-          event.params.chatId,
-          transaction,
-        );
-      }
-    });
+        const triggerResponseRef = app
+          .firestore()
+          .collection('experiments')
+          .doc(experimentId)
+          .collection('cohorts')
+          .doc(cohortId)
+          .collection('publicStageData')
+          .doc(stageId)
+          .collection('triggerLogs')
+          .doc(`${event.params.chatId}-${chatMessage.type}`);
+        const triggerResponseDoc = await transaction.get(triggerResponseRef);
+        if (triggerResponseDoc.exists) return; // Already responded
+        const agentDocumentRef = app
+          .firestore()
+          .collection('experiments')
+          .doc(experimentId)
+          .collection('cohorts')
+          .doc(cohortId)
+          .collection('publicStageData')
+          .doc(stageId)
+          .collection('chats')
+          .doc(chatMessage.id);
+
+        // Write trigger log then chat message
+        transaction.set(triggerResponseRef, {});
+        transaction.set(agentDocumentRef, chatMessage);
+
+        // Increment local counter only if transaction body not aborted
+        mediatorMessagesPosted += 1;
+      });
+    }
   },
 );
 
