@@ -309,7 +309,7 @@ In total, the study will take approximately **22 minutes to complete.**
 
 # Compensation
 
-If you finish both surveys and the chat, you will receive the amount shown in Prolific ($5.50). If you leave the study early, you will not be compensated.
+If you finish both surveys and the chat, you will receive the amount shown in Prolific ($5.50 USD). If you leave the study early, you will not be compensated.
 
 A single individual may not participate in this study more than once, and may not use automation software, large language models (LLMs), or bots to answer surveys or compose messages. You will be ineligible for payment if we detect that you attempted to participate a second time.
 
@@ -350,7 +350,7 @@ Please protect your privacy. If you agree to participate, please do not share an
 
 By selecting “I agree to participate” below, you certify that:
 
-- You are at least 18 years old and a resident of the United States
+- You are at least 18 years old and a resident of the United States or Canada.
 - You have read and understood the information above.
 - You voluntarily agree to take part in this research study.`;
 
@@ -420,17 +420,18 @@ const SORTING_HAT_QUESTION = createMultipleChoiceSurveyQuestion({
 });
 
 const DEMOGRAPHIC_QUESTIONS: SurveyQuestion[] = [
-  createMultipleChoiceSurveyQuestion({
-    questionTitle:
-      'Which of the following political parties do your views most align with?',
-    options: createMultipleChoiceItems([
-      'Democrat',
-      'Republican',
-      'Independent',
-      'Something else',
-      'Prefer not to answer',
-    ]),
-  }),
+  // Removed since these parties don't exist in Canada
+  // createMultipleChoiceSurveyQuestion({
+  //   questionTitle:
+  //     'Which of the following political parties do your views most align with?',
+  //   options: createMultipleChoiceItems([
+  //     'Democrat',
+  //     'Republican',
+  //     'Independent',
+  //     'Something else',
+  //     'Prefer not to answer',
+  //   ]),
+  // }),
 
   createMultipleChoiceSurveyQuestion({
     questionTitle: 'What is your present religion, if any?',
@@ -455,7 +456,7 @@ const DEMOGRAPHIC_QUESTIONS: SurveyQuestion[] = [
     questionTitle: 'What is the highest level of education you have completed?',
     options: createMultipleChoiceItems([
       'Less than high school',
-      'High school diploma or GED',
+      'High school diploma or equivalent',
       'Some college / Associate degree',
       "Bachelor's degree",
       'Graduate or professional degree',
