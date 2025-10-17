@@ -46,7 +46,8 @@ import {
   getSalespersonStageConfigs,
 } from '../../shared/games/salesperson';
 import {
-  BBOT_METADATA,
+  BBOT_METADATA_CA,
+  BBOT_METADATA_US,
   BBOT_AGENTS,
   getBbotStageConfigs,
 } from '../../shared/games/bridging_bot';
@@ -132,7 +133,8 @@ export class StageBuilderDialog extends MobxLitElement {
       <div class="card-gallery-wrapper">
         ${this.renderLASCard()} ${this.renderLASCard(true)}
         ${this.renderRealityTVCard()} ${this.renderChipNegotiationCard()}
-        ${this.renderSalespersonGameCard()} ${this.renderBbotCard()}
+        ${this.renderSalespersonGameCard()} ${this.renderBbotCardUs()}
+        ${this.renderBbotCardCa()}
       </div>
     `;
   }
@@ -236,15 +238,28 @@ export class StageBuilderDialog extends MobxLitElement {
     `;
   }
 
-  private renderBbotCard() {
+  private renderBbotCardCa() {
     const addGame = () => {
-      this.addGame(BBOT_METADATA, getBbotStageConfigs(), BBOT_AGENTS);
+      this.addGame(BBOT_METADATA_CA, getBbotStageConfigs('CA'), BBOT_AGENTS);
     };
 
     return html`
       <div class="card" @click=${addGame}>
-        <div class="title">${BBOT_METADATA.publicName}</div>
-        <div>${BBOT_METADATA.description}</div>
+        <div class="title">${BBOT_METADATA_CA.publicName}</div>
+        <div>${BBOT_METADATA_CA.description}</div>
+      </div>
+    `;
+  }
+
+  private renderBbotCardUs() {
+    const addGame = () => {
+      this.addGame(BBOT_METADATA_US, getBbotStageConfigs('US'), BBOT_AGENTS);
+    };
+
+    return html`
+      <div class="card" @click=${addGame}>
+        <div class="title">${BBOT_METADATA_US.publicName}</div>
+        <div>${BBOT_METADATA_US.description}</div>
       </div>
     `;
   }
