@@ -7,7 +7,6 @@ import {
   createAgentModelSettings,
   createAgentPersonaConfig,
   createChatStage,
-  // createCheckSurveyQuestion, // used in feedback survey
   createInfoStage,
   createMetadataConfig,
   createMultipleChoiceItem,
@@ -18,7 +17,6 @@ import {
   createStageProgressConfig,
   createStageTextConfig,
   createSurveyStage,
-  // createTextSurveyQuestion, // used in feedback survey
   createTOSStage,
   createTransferStage,
   MultipleChoiceItem,
@@ -36,17 +34,23 @@ import {
   createModelGenerationConfig,
 } from '@deliberation-lab/utils';
 
-export const BBOT_METADATA = createMetadataConfig({
-  name: 'Bridging Bot Lab: Reproductive Rights Chat',
+export const BBOT_METADATA_CA = createMetadataConfig({
+  name: 'Bridging Bot Lab: Reproductive Rights Chat (CA)',
   publicName: 'Reproductive Rights Chat',
-  description: 'A discussion about reproductive rights',
+  description: 'A discussion about reproductive rights, Canadian version',
+});
+
+export const BBOT_METADATA_US = createMetadataConfig({
+  name: 'Bridging Bot Lab: Reproductive Rights Chat (US)',
+  publicName: 'Reproductive Rights Chat',
+  description: 'A discussion about reproductive rights, US version',
 });
 
 export const BBOT_CHAT_STAGE_ID = 'bbot_chat';
 
 const SKIP_INITIAL_SURVEY = true; // Skip the initial survey for control data collection
 
-export function getBbotStageConfigs(): StageConfig[] {
+export function getBbotStageConfigs(country = 'US'): StageConfig[] {
   const stages: StageConfig[] = [];
 
   // Informed consent
@@ -56,10 +60,18 @@ export function getBbotStageConfigs(): StageConfig[] {
   stages.push(BBOT_PROFILE_STAGE);
 
   if (SKIP_INITIAL_SURVEY) {
-    stages.push(BBOT_PRE_CHAT_SURVEY_STAGE);
+    if (country === 'US') {
+      stages.push(BBOT_PRE_CHAT_SURVEY_STAGE_US);
+    } else {
+      stages.push(BBOT_PRE_CHAT_SURVEY_STAGE);
+    }
   } else {
     // Pre-intervention surveys
-    stages.push(BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_PRE);
+    if (country === 'US') {
+      stages.push(BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_PRE_US);
+    } else {
+      stages.push(BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_PRE);
+    }
     stages.push(BBOT_DEMOCRATIC_RECIPROCITY_SURVEY_STAGE_PRE);
     stages.push(BBOT_FEELING_THERMOMETER_SURVEY_STAGE_PRE);
   }
@@ -309,7 +321,7 @@ In total, the study will take approximately **22 minutes to complete.**
 
 # Compensation
 
-If you finish both surveys and the chat, you will receive the amount shown in Prolific ($5.50 USD). If you leave the study early, you will not be compensated.
+If you finish both surveys and the chat, you will receive the amount shown in Prolific. If you leave the study early, you will not be compensated.
 
 A single individual may not participate in this study more than once, and may not use automation software, large language models (LLMs), or bots to answer surveys or compose messages. You will be ineligible for payment if we detect that you attempted to participate a second time.
 
@@ -419,20 +431,22 @@ const SORTING_HAT_QUESTION = createMultipleChoiceSurveyQuestion({
   ],
 });
 
-const DEMOGRAPHIC_QUESTIONS: SurveyQuestion[] = [
+const US_DEMOGRAPHIC_QUESTIONS: SurveyQuestion[] = [
   // Removed since these parties don't exist in Canada
-  // createMultipleChoiceSurveyQuestion({
-  //   questionTitle:
-  //     'Which of the following political parties do your views most align with?',
-  //   options: createMultipleChoiceItems([
-  //     'Democrat',
-  //     'Republican',
-  //     'Independent',
-  //     'Something else',
-  //     'Prefer not to answer',
-  //   ]),
-  // }),
+  createMultipleChoiceSurveyQuestion({
+    questionTitle:
+      'Which of the following political parties do your views most align with?',
+    options: createMultipleChoiceItems([
+      'Democrat',
+      'Republican',
+      'Independent',
+      'Something else',
+      'Prefer not to answer',
+    ]),
+  }),
+];
 
+const DEMOGRAPHIC_QUESTIONS: SurveyQuestion[] = [
   createMultipleChoiceSurveyQuestion({
     questionTitle: 'What is your present religion, if any?',
     options: createMultipleChoiceItems([
@@ -524,6 +538,28 @@ const BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_PRE = createSurveyStage({
   name: 'Beliefs about abortion',
   game: StageGame.BBOT,
   questions: [...BELIEF_QUESTIONS, ...DEMOGRAPHIC_QUESTIONS],
+});
+
+const BBOT_PRE_CHAT_SURVEY_STAGE_US = createSurveyStage({
+  id: 'pre_chat_survey',
+  name: 'Pre-chat survey',
+  game: StageGame.BBOT,
+  questions: [
+    SORTING_HAT_QUESTION,
+    ...US_DEMOGRAPHIC_QUESTIONS,
+    ...DEMOGRAPHIC_QUESTIONS,
+  ],
+});
+
+const BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_PRE_US = createSurveyStage({
+  id: 'reproductive_rights_survey_pre',
+  name: 'Beliefs about abortion',
+  game: StageGame.BBOT,
+  questions: [
+    ...BELIEF_QUESTIONS,
+    ...US_DEMOGRAPHIC_QUESTIONS,
+    ...DEMOGRAPHIC_QUESTIONS,
+  ],
 });
 
 const BBOT_REPRODUCTIVE_RIGHTS_SURVEY_STAGE_POST = createSurveyStage({
