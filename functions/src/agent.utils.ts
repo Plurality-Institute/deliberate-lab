@@ -12,6 +12,7 @@ import {
   StructuredOutputConfig,
   createLlmCallLog,
   Experiment,
+  LlmCallType,
 } from '@deliberation-lab/utils';
 import {ModelResponse} from './api/model.response';
 
@@ -43,6 +44,7 @@ export interface LlmCallMetadata {
   participantId: string; // Public ID
   agentId?: string; // Agent persona ID if applicable
   chatMessageIds?: string[]; // List of chat message IDs used in prompt (if applicable)
+  callType?: LlmCallType; // Type of LLM call being made
 }
 
 export async function getAgentResponse(
@@ -113,6 +115,7 @@ export async function getAgentResponse(
         stageId: metadata.stageId,
         participantId: metadata.participantId,
         agentId: metadata.agentId,
+        callType: metadata.callType,
         apiType: modelSettings.apiType,
         modelName: modelSettings.modelName,
         prompt,

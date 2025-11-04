@@ -9,6 +9,7 @@ import {
   getSurveyStagePromptContext,
   SurveyAnswer,
   SurveyQuestion,
+  LlmCallType,
 } from '@deliberation-lab/utils';
 import {getAgentResponse, LlmCallMetadata} from '../agent.utils';
 import {writeLogEntry} from '../log.utils';
@@ -112,6 +113,7 @@ async function getAgentParticipantSurveyQuestionResponse(
     stageId: stage.id,
     participantId: participant.publicId,
     agentId: participant.agentConfig.agentId,
+    callType: LlmCallType.SURVEY_RESPONSE,
   };
 
   // TODO: Use structured output

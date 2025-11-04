@@ -1,5 +1,6 @@
 import {
   ExperimenterData,
+  LlmCallType,
   ParticipantProfile,
   ParticipantProfileExtended,
   ParticipantStatus,
@@ -87,6 +88,7 @@ export async function getAgentParticipantRankingStageResponse(
     stageId: stage.id,
     participantId: participant.publicId,
     agentId: participant.agentConfig.agentId,
+    callType: LlmCallType.RANKING_RESPONSE,
   };
 
   // TODO: Use structured output

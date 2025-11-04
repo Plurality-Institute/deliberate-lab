@@ -6,6 +6,7 @@ import {
   ChatMessage,
   ChatStageConfig,
   ChatStagePublicData,
+  LlmCallType,
   ParticipantProfileBase,
   ProfileAgentConfig,
   StageConfig,
@@ -347,6 +348,7 @@ export async function getAgentChatAPIResponse(
       participantId: profileId,
       agentId: agentConfig.agentId,
       chatMessageIds: chatMessages.map((msg) => msg.id),
+      callType: LlmCallType.SHOULD_RESPOND,
     };
 
     const shouldRespondResponse = await getAgentResponse(
@@ -444,6 +446,7 @@ export async function getAgentChatAPIResponse(
     participantId: profileId,
     agentId: agentConfig.agentId,
     chatMessageIds: chatMessages.map((msg) => msg.id),
+    callType: LlmCallType.CHAT_MESSAGE,
   };
 
   const response = await getAgentResponse(

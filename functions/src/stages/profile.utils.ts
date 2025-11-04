@@ -1,4 +1,5 @@
 import {
+  LlmCallType,
   ParticipantProfileExtended,
   ProfileType,
   ProfileStageConfig,
@@ -69,6 +70,7 @@ export async function completeProfile(
     stageId: stageConfig.id,
     participantId: participant.publicId,
     agentId: participant.agentConfig.agentId,
+    callType: LlmCallType.PROFILE_GENERATION,
   };
 
   const response = await getAgentResponse(
