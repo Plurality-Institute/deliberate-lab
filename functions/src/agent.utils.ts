@@ -42,6 +42,7 @@ export interface LlmCallMetadata {
   stageId: string;
   participantId: string; // Public ID
   agentId?: string; // Agent persona ID if applicable
+  chatMessageIds?: string[]; // List of chat message IDs used in prompt (if applicable)
 }
 
 export async function getAgentResponse(
@@ -120,6 +121,7 @@ export async function getAgentResponse(
         errorMessage: response.errorMessage,
         temperature: generationConfig.temperature,
         maxTokens: generationConfig.maxTokens,
+        chatMessageIds: metadata.chatMessageIds,
         timestamp: Timestamp.now(),
       });
 

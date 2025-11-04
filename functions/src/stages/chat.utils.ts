@@ -346,6 +346,7 @@ export async function getAgentChatAPIResponse(
       stageId: stageConfig.id,
       participantId: profileId,
       agentId: agentConfig.agentId,
+      chatMessageIds: chatMessages.map((msg) => msg.id),
     };
 
     const shouldRespondResponse = await getAgentResponse(
@@ -442,6 +443,7 @@ export async function getAgentChatAPIResponse(
     stageId: stageConfig.id,
     participantId: profileId,
     agentId: agentConfig.agentId,
+    chatMessageIds: chatMessages.map((msg) => msg.id),
   };
 
   const response = await getAgentResponse(

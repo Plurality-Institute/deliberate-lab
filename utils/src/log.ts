@@ -44,25 +44,27 @@ export interface LlmCallLog {
   errorMessage: string; // Error message if response failed (empty string if no error)
   temperature: number; // Temperature setting used (0 if not set)
   maxTokens: number; // Max tokens setting (0 if not set)
+  chatMessageIds: string[]; // List of chat message IDs used in prompt (empty if not applicable)
   timestamp: UnifiedTimestamp;
 }
 
-export function createLlmCallLog(config: Partial<LlmCallLog> = {}): LlmCallLog {
+export function createLlmCallLog(log: Partial<LlmCallLog> = {}): LlmCallLog {
   return {
-    id: config.id ?? generateId(),
-    experimentId: config.experimentId ?? '',
-    cohortId: config.cohortId ?? '',
-    stageId: config.stageId ?? '',
-    participantId: config.participantId ?? '',
-    agentId: config.agentId ?? '',
-    apiType: config.apiType ?? ApiKeyType.GEMINI_API_KEY,
-    modelName: config.modelName ?? '',
-    prompt: config.prompt ?? '',
-    response: config.response ?? '',
-    responseStatus: config.responseStatus ?? '',
-    errorMessage: config.errorMessage ?? '',
-    temperature: config.temperature ?? 0,
-    maxTokens: config.maxTokens ?? 0,
-    timestamp: config.timestamp ?? Timestamp.now(),
+    id: log.id ?? generateId(),
+    experimentId: log.experimentId ?? '',
+    cohortId: log.cohortId ?? '',
+    stageId: log.stageId ?? '',
+    participantId: log.participantId ?? '',
+    agentId: log.agentId ?? '',
+    apiType: log.apiType ?? ApiKeyType.GEMINI_API_KEY,
+    modelName: log.modelName ?? '',
+    prompt: log.prompt ?? '',
+    response: log.response ?? '',
+    responseStatus: log.responseStatus ?? '',
+    errorMessage: log.errorMessage ?? '',
+    temperature: log.temperature ?? 0,
+    maxTokens: log.maxTokens ?? 0,
+    chatMessageIds: log.chatMessageIds ?? [],
+    timestamp: log.timestamp ?? Timestamp.now(),
   };
 }
