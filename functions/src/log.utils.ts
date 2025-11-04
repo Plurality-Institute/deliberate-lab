@@ -1,4 +1,8 @@
-import {createLogEntry} from '@deliberation-lab/utils';
+import {
+  createLogEntry,
+  createLlmCallLog,
+  LlmCallLog,
+} from '@deliberation-lab/utils';
 
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
@@ -35,4 +39,19 @@ export async function writeLogEntry(
   await app.firestore().runTransaction(async (transaction) => {
     transaction.set(logDoc, log);
   });
+}
+
+/** Write LLM call log outside of any transaction.
+ * This allows us to log LLM calls even if the transaction is rejected.
+ */
+export async function writeLlmCallLog(log: LlmCallLog) {
+  const logDoc = app
+    .firestore()
+    .collection('experiments')
+    .doc(log.experimentId)
+    .collection('llmLogs')
+    .doc(log.id);
+
+  // Write directly without transaction
+  await logDoc.set(log);
 }

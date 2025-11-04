@@ -23,7 +23,7 @@ import {Timestamp} from 'firebase-admin/firestore';
 
 import {ModelResponseStatus} from '../api/model.response';
 import {app} from '../app';
-import {getAgentResponse} from '../agent.utils';
+import {getAgentResponse, LlmCallMetadata} from '../agent.utils';
 import {
   getExperimenterDataFromExperiment,
   getFirestoreActiveParticipants,
@@ -339,12 +339,22 @@ export async function getAgentChatAPIResponse(
       stageConfig as ChatStageConfig,
     );
 
+    // Prepare metadata for LLM logging
+    const llmMetadata: LlmCallMetadata = {
+      experimentId,
+      cohortId,
+      stageId: stageConfig.id,
+      participantId: profileId,
+      agentId: agentConfig.agentId,
+    };
+
     const shouldRespondResponse = await getAgentResponse(
       experimenterData,
       shouldRespondPrompt,
       shouldRespondModelSettings,
       shouldRespondGenerationConfig,
       shouldRespondStructuredOutputConfig,
+      llmMetadata,
     );
 
     if (shouldRespondResponse.status !== ModelResponseStatus.OK) {
@@ -425,12 +435,22 @@ export async function getAgentChatAPIResponse(
     stageConfig as ChatStageConfig,
   );
 
+  // Prepare metadata for LLM logging
+  const llmMetadata: LlmCallMetadata = {
+    experimentId,
+    cohortId,
+    stageId: stageConfig.id,
+    participantId: profileId,
+    agentId: agentConfig.agentId,
+  };
+
   const response = await getAgentResponse(
     experimenterData,
     prompt,
     agentConfig.modelSettings,
     promptConfig.generationConfig,
     promptConfig.structuredOutputConfig,
+    llmMetadata,
   );
 
   if (response.status !== ModelResponseStatus.OK) {

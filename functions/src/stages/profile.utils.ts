@@ -14,7 +14,7 @@ import {onCall} from 'firebase-functions/v2/https';
 
 import {ModelResponseStatus} from '../api/model.response';
 import {app} from '../app';
-import {getAgentResponse} from '../agent.utils';
+import {getAgentResponse, LlmCallMetadata} from '../agent.utils';
 import {getExperimenterDataFromExperiment} from '../utils/firestore';
 import {getPastStagesPromptContext} from './stage.utils';
 
@@ -62,12 +62,22 @@ export async function completeProfile(
     await getExperimenterDataFromExperiment(experimentId);
   if (!experimenterData) return null;
 
+  // Prepare metadata for LLM logging
+  const llmMetadata: LlmCallMetadata = {
+    experimentId,
+    cohortId: participant.currentCohortId,
+    stageId: stageConfig.id,
+    participantId: participant.publicId,
+    agentId: participant.agentConfig.agentId,
+  };
+
   const response = await getAgentResponse(
     experimenterData,
     `${participant.agentConfig.promptContext}\n\nPlease fill out your profile name, emoji, and pronouns.`,
     participant.agentConfig.modelSettings,
     createModelGenerationConfig(),
     PROFILE_STRUCTURED_OUTPUT_CONFIG,
+    llmMetadata,
   );
 
   if (response.status !== ModelResponseStatus.OK) {
