@@ -17,6 +17,7 @@ import {
   CohortConfig,
   Experiment,
   ExperimentDownload,
+  LlmCallLog,
   StageConfig,
   StageKind,
   StageParticipantAnswer,
@@ -352,6 +353,27 @@ export const generateExperimentDownload = onCall(
     });
     await participantWriteChain;
     write('}');
+
+    // llmLogs field (paged)
+    write(',"llmLogs":[');
+    let llmLogFirst = true;
+    const llmLogsCol = db
+      .collection('experiments')
+      .doc(experimentId)
+      .collection('llmLogs');
+    await pageThrough(llmLogsCol, 500, async (docs) => {
+      const logs = docs.map((d) => d.data() as LlmCallLog);
+      for (const log of logs) {
+        // Omit the prompt field to reduce download size
+        const {prompt, ...logWithoutPrompt} = log;
+        const entry = `${llmLogFirst ? '' : ','}${JSON.stringify(
+          logWithoutPrompt,
+        )}`;
+        llmLogFirst = false;
+        write(entry);
+      }
+    });
+    write(']');
 
     // End JSON document and finalize archive stream
     write('}');

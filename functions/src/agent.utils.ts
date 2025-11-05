@@ -10,7 +10,9 @@ import {
   ParticipantStatus,
   StageKind,
   StructuredOutputConfig,
-  makeStructuredOutputPrompt,
+  createLlmCallLog,
+  Experiment,
+  LlmCallType,
 } from '@deliberation-lab/utils';
 import {ModelResponse} from './api/model.response';
 
@@ -32,6 +34,18 @@ import {
 } from './utils/firestore';
 
 import {app} from './app';
+import {writeLlmCallLog} from './log.utils';
+
+/** Metadata for logging LLM calls */
+export interface LlmCallMetadata {
+  experimentId: string;
+  cohortId: string;
+  stageId: string;
+  participantId: string; // Public ID
+  agentId?: string; // Agent persona ID if applicable
+  chatMessageIds?: string[]; // List of chat message IDs used in prompt (if applicable)
+  callType?: LlmCallType; // Type of LLM call being made
+}
 
 export async function getAgentResponse(
   data: ExperimenterData, // TODO: Only pass in API keys
@@ -39,6 +53,7 @@ export async function getAgentResponse(
   modelSettings: AgentModelSettings,
   generationConfig: ModelGenerationConfig,
   structuredOutputConfig?: StructuredOutputConfig,
+  metadata?: LlmCallMetadata, // Optional metadata for logging
 ): Promise<ModelResponse> {
   let response;
 
@@ -70,7 +85,12 @@ export async function getAgentResponse(
       structuredOutputConfig,
     );
   } else if (modelSettings.apiType === ApiKeyType.OLLAMA_CUSTOM_URL) {
-    response = await getOllamaResponse(data, modelSettings.modelName, prompt);
+    response = await getOllamaResponse(
+      data,
+      modelSettings.modelName,
+      prompt,
+      generationConfig,
+    );
   } else {
     response = {
       status: ModelResponseStatus.CONFIG_ERROR,
@@ -85,6 +105,36 @@ export async function getAgentResponse(
   }
 
   console.log('llm response:', response);
+
+  // Log the LLM call if metadata is provided
+  if (metadata) {
+    try {
+      const llmLog = createLlmCallLog({
+        experimentId: metadata.experimentId,
+        cohortId: metadata.cohortId,
+        stageId: metadata.stageId,
+        participantId: metadata.participantId,
+        agentId: metadata.agentId,
+        callType: metadata.callType,
+        apiType: modelSettings.apiType,
+        modelName: modelSettings.modelName,
+        prompt,
+        response: response.text || '',
+        responseStatus: response.status,
+        errorMessage: response.errorMessage,
+        temperature: generationConfig.temperature,
+        maxTokens: generationConfig.maxTokens,
+        chatMessageIds: metadata.chatMessageIds,
+        timestamp: Timestamp.now(),
+      });
+
+      // Write log outside of any transaction
+      await writeLlmCallLog(llmLog);
+    } catch (error) {
+      console.error('Failed to write LLM call log:', error);
+      // Don't throw - logging failure shouldn't break the main flow
+    }
+  }
 
   return response;
 }
@@ -113,6 +163,7 @@ export async function getOpenAIAPIResponse(
   model: string,
   prompt: string,
   generationConfig: ModelGenerationConfig,
+  structuredOutputConfig?: StructuredOutputConfig,
 ): Promise<ModelResponse> {
   return await getOpenAIAPIChatCompletionResponse(
     data.apiKeys.openAIApiKey?.apiKey || '',
@@ -120,6 +171,7 @@ export async function getOpenAIAPIResponse(
     model,
     prompt,
     generationConfig,
+    structuredOutputConfig,
   );
 }
 
@@ -192,6 +244,18 @@ export async function completeStageAsAgentParticipant(
     participant.currentStageId,
   );
 
+  if (!stage) {
+    console.log(`Stage not found: ${participant.currentStageId}`);
+    return;
+  }
+
+  if (!participant.agentConfig) {
+    console.log(
+      `Participant is not an agent, cannot complete stage as agent: ${participant.publicId}`,
+    );
+    return;
+  }
+
   // Fetch experiment creator's API key.
   const creatorId = experiment.metadata.creator;
   const experimenterData = await getExperimenterData(creatorId);
@@ -247,7 +311,7 @@ export async function completeStageAsAgentParticipant(
         participant,
         stage,
       );
-      answerDoc.set(rankingAnswer);
+      answerDoc.set(rankingAnswer!);
       await completeStage();
       participantDoc.set(participant);
       break;
@@ -262,7 +326,7 @@ export async function completeStageAsAgentParticipant(
         participant,
         stage,
       );
-      answerDoc.set(surveyAnswer);
+      answerDoc.set(surveyAnswer!);
       await completeStage();
       participantDoc.set(participant);
       break;
@@ -278,7 +342,7 @@ export async function getAgentParticipantPrompt(
   experimentId: string,
   stageId: string,
   agentId: string,
-): AgentParticipantPromptConfig | null {
+): Promise<AgentParticipantPromptConfig | null> {
   const prompt = await app
     .firestore()
     .collection('experiments')

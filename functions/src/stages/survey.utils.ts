@@ -7,9 +7,11 @@ import {
   createModelGenerationConfig,
   createSurveyStageParticipantAnswer,
   getSurveyStagePromptContext,
-  getSurveyStageQuestion,
+  SurveyAnswer,
+  SurveyQuestion,
+  LlmCallType,
 } from '@deliberation-lab/utils';
-import {getAgentResponse} from '../agent.utils';
+import {getAgentResponse, LlmCallMetadata} from '../agent.utils';
 import {writeLogEntry} from '../log.utils';
 import {getPastStagesPromptContext} from './stage.utils';
 
@@ -57,11 +59,11 @@ export async function getAgentParticipantSurveyStageResponse(
 async function getAgentParticipantSurveyQuestionResponse(
   experimentId: string,
   experimenterData: ExperimenterData, // for making LLM call
-  stage: StageConfig,
+  stage: SurveyStageConfig,
   participant: ParticipantProfileExtended,
   question: SurveyQuestion, // current question
   answerMap: Record<string, SurveyAnswer>, // answers collected so far
-): SurveyAnswer {
+): Promise<SurveyAnswer> {
   const pastStagesPrompt = await getPastStagesPromptContext(
     experimentId,
     stage.id,
@@ -99,12 +101,29 @@ async function getAgentParticipantSurveyQuestionResponse(
     `Sending agent participant prompt for survey stage (${stage.name} - ${question.questionTitle})`,
     prompt,
   );
+
+  if (!participant.agentConfig) {
+    throw new Error('Participant does not have agentConfig');
+  }
+
+  // Prepare metadata for LLM logging
+  const llmMetadata: LlmCallMetadata = {
+    experimentId,
+    cohortId: participant.currentCohortId,
+    stageId: stage.id,
+    participantId: participant.publicId,
+    agentId: participant.agentConfig.agentId,
+    callType: LlmCallType.SURVEY_RESPONSE,
+  };
+
   // TODO: Use structured output
   const rawResponse = await getAgentResponse(
     experimenterData,
     prompt,
     participant.agentConfig.modelSettings,
     generationConfig,
+    undefined,
+    llmMetadata,
   );
   const response = rawResponse.text ?? '';
 
@@ -131,7 +150,7 @@ async function getAgentParticipantSurveyQuestionResponse(
         return {
           id: question.id,
           kind: SurveyQuestionKind.CHECK,
-          isChecked: response.trim().lower() === 'true',
+          isChecked: response.trim().toLowerCase() === 'true',
         };
       case SurveyQuestionKind.MULTIPLE_CHOICE:
         return {
@@ -146,10 +165,10 @@ async function getAgentParticipantSurveyQuestionResponse(
           value: Number(response.trim()),
         };
       default:
-        return undefined;
+        throw new Error('Unknown question kind');
     }
   } catch (error) {
     console.log(error);
-    return undefined;
+    throw error;
   }
 }

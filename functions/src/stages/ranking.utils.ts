@@ -1,17 +1,15 @@
 import {
-  AgentModelSettings,
   ExperimenterData,
-  ModelGenerationConfig,
+  LlmCallType,
+  ParticipantProfile,
   ParticipantProfileExtended,
   ParticipantStatus,
   RankingStageConfig,
-  RankingStageParticipantAnswer,
-  createAgentConfig,
   createAgentParticipantRankingStagePrompt,
   createModelGenerationConfig,
   createRankingStageParticipantAnswer,
 } from '@deliberation-lab/utils';
-import {getAgentResponse} from '../agent.utils';
+import {getAgentResponse, LlmCallMetadata} from '../agent.utils';
 import {writeLogEntry} from '../log.utils';
 import {getPastStagesPromptContext} from './stage.utils';
 
@@ -83,12 +81,24 @@ export async function getAgentParticipantRankingStageResponse(
     prompt,
   );
 
+  // Prepare metadata for LLM logging
+  const llmMetadata: LlmCallMetadata = {
+    experimentId,
+    cohortId: participant.currentCohortId,
+    stageId: stage.id,
+    participantId: participant.publicId,
+    agentId: participant.agentConfig.agentId,
+    callType: LlmCallType.RANKING_RESPONSE,
+  };
+
   // TODO: Use structured output
   const rawResponse = await getAgentResponse(
     experimenterData,
     prompt,
     participant.agentConfig.modelSettings,
     generationConfig,
+    undefined,
+    llmMetadata,
   );
   const response = rawResponse.text ?? '';
 

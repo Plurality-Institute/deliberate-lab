@@ -4,6 +4,7 @@ import {Experiment} from './experiment';
 import {ParticipantProfileExtended} from './participant';
 import {BehaviorEvent} from './behavior';
 import {ChatMessage} from './stages/chat_stage';
+import {LlmCallLog} from './log';
 import {
   StageConfig,
   StageParticipantAnswer,
@@ -16,6 +17,9 @@ import {
 // TYPES                                                                     //
 // ************************************************************************* //
 
+/** LLM call log for download (omits prompt to reduce size). */
+export type LlmCallLogDownload = Omit<LlmCallLog, 'prompt'>;
+
 export interface ExperimentDownload {
   // Experiment config
   experiment: Experiment;
@@ -27,6 +31,8 @@ export interface ExperimentDownload {
   cohortMap: Record<string, CohortDownload>;
   // Maps from agent persona ID to agent data
   agentMap: Record<string, AgentDataObject>;
+  // List of LLM call logs (without prompts)
+  llmLogs: LlmCallLogDownload[];
   // TODO: add roleMap once roles are added
 }
 
@@ -56,6 +62,7 @@ export function createExperimentDownload(
     participantMap: {},
     cohortMap: {},
     agentMap: {},
+    llmLogs: [],
   };
 }
 

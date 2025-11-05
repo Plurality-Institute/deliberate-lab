@@ -46,6 +46,7 @@ export interface OpenAIServerConfig {
 
 export interface OllamaServerConfig {
   url: string;
+  apiKey: string;
   // port: number; // apparently not needed? https://github.com/ollama/ollama/blob/main/docs/api.md#generate-a-completion
   // will probably need more data for server-side auth?
 }
@@ -89,7 +90,7 @@ export function createExperimenterData(
     apiKeys: {
       geminiApiKey: INVALID_API_KEY,
       openAIApiKey: createOpenAIServerConfig(),
-      ollamaApiKey: {url: INVALID_API_KEY},
+      ollamaApiKey: {url: INVALID_API_KEY, apiKey: INVALID_API_KEY},
       activeApiKeyType: ApiKeyType.GEMINI_API_KEY,
     },
     email: experimenterEmail,
