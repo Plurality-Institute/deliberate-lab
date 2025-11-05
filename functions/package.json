@@ -2,8 +2,8 @@
   "name": "functions",
   "scripts": {
     "lint": "eslint",
-    "build": "esbuild src/index.ts --bundle --outdir=lib --platform=node --target=node18 --external:farmhash",
-    "build:watch": "esbuild src/index.ts --bundle --outdir=lib --platform=node --target=node18 --external:farmhash --watch",
+    "build": "esbuild src/index.ts --bundle --outdir=lib --platform=node --target=node20 --external:farmhash",
+    "build:watch": "esbuild src/index.ts --bundle --outdir=lib --platform=node --target=node20 --external:farmhash --watch",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
@@ -13,7 +13,7 @@
     "balance": "node scripts/bridging_bot_balancer.js"
   },
   "engines": {
-    "node": "18"
+    "node": "20"
   },
   "main": "lib/index.js",
   "dependencies": {

@@ -6,7 +6,7 @@
     "outDir": "lib",
     "sourceMap": true,
     "strict": true,
-    "target": "es2017",
+    "target": "es2020",
     "paths": {
       "@deliberation-lab/utils": ["../utils/dist"] // Makes `tsc --watch` also watch changes in the utils package
     },
